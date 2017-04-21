@@ -12,12 +12,13 @@
 #include <time.h>
 #include "matrix.h"
 #include "dlt.h"
+#include "draw.h"
 #include "preview.h"
 #include "ovrc.h"
 #include "ov.h"
 
 long CutZ, Dither=1, dithernum=-1, dither16num=-1, dithertbl2[900], Down=0,
-     DownX, DownY, DownBuf[7], LastMove=0, opacitytbl[OPACDITHER], OpacPos=0;
+     DownX, DownY, LastMove=0, opacitytbl[OPACDITHER], OpacPos=0;
 long CameraCoor[]={76,4,100,100}, CutawayCoor[]={76,4,100,100},
      LightCoor[]={96,34,100,100};
 char *DispInfo[]={"Use mouse to rotate/pan/zoom."};
@@ -915,7 +916,6 @@ mouse(HWND hwnd, long but, long up, long flag, long x, long y)
   data = lock_window(hwnd);
   if (!data)  return(0);
   DownX = x;  DownY = y;
-  zone_geo(hwnd, data, x, y, DownBuf);
   if ((!but && (flag&MK_RBUTTON)) || (but==1 && (flag&MK_LBUTTON)))
     but = 2;
   if (!but)        { Down = 1;  newcur = 3;  SetCapture(hwnd); }
@@ -939,19 +939,23 @@ mouse_move(HWND hwnd, long up, long flag, long x, long y)
  *                   MK_SHIFT flags.
  *        long x, y: position of the mouse within the window.   4/2/97-DWM */
 {
+  RECT rect;
+
+  GetClientRect(hwnd, &rect);
+
   switch (Down) {
-    case 1: if (x!=DownX && DownBuf[5])
-        rotate_geo(1, 180.*(DownX-x)/DownBuf[5]);
-      if (y!=DownY && DownBuf[6])
-        rotate_geo(0, 180.*(DownY-y)/DownBuf[6]);
+    case 1: if (x!=DownX && rect.right)
+        rotate_geo(1, 180.*(DownX-x)/rect.right);
+      if (y!=DownY && rect.bottom)
+        rotate_geo(0, 180.*(DownY-y)/rect.bottom);
       DownX = x;  DownY = y; break;
-    case 2: if (y!=DownY && DownBuf[6])
-      shift_geo(2, 20.*(y-DownY)/DownBuf[6]);
+    case 2: if (y!=DownY && rect.bottom)
+      shift_geo(2, 20.*(y-DownY)/rect.bottom);
       DownY = y; break;
-    case 3: if (x!=DownX && DownBuf[5])
-        shift_geo(0, (float)(x-DownX)/DownBuf[5]);
-      if (y!=DownY && DownBuf[6])
-        shift_geo(1, (float)(y-DownY)/DownBuf[6]);
+    case 3: if (x!=DownX && rect.right)
+        shift_geo(0, (float)(x-DownX)/rect.right);
+      if (y!=DownY && rect.bottom)
+        shift_geo(1, (float)(y-DownY)/rect.bottom);
       DownX = x;  DownY = y; break;
     /** Additional mouse movements go here **/
     default: ; }
@@ -1876,7 +1880,7 @@ long sphere_inter(real *x, real *v, real radius, real *inter)
   return(2);
 }
 
-stereo_figure(HWND hdlg, long mode, long swap, STEREO *st)
+void stereo_figure(HWND hdlg, long mode, long swap, STEREO *st)
 /* Draw a preview picture based on the current stereo mode.
  * Enter: HWND hdlg: pointer to owner dialog.
  *        long mode: mode number to draw (0-6).
@@ -1884,20 +1888,19 @@ stereo_figure(HWND hdlg, long mode, long swap, STEREO *st)
  *        STEREO *st: pointer to stereo record containing image to use with
  *                    stereogram.                               1/1/98-DWM */
 {
-  RECT rect;
   HDC hdc;
-  HANDLE dest=0, bmp=0;
+  HANDLE dest=0, bmp=0, temp;
   uchar *src;
   long box[]={94, 4, 94+136, 4+96}, out[4];
   long w, h, pal=0, ow=PREVIEWWIDTH, oh=PREVIEWHEIGHT;
   long i, j, k, od, rr, gg, bb;
   long tim=clock();
 
-  if (!PreviewGraphic)  return(0);
+  if (!PreviewGraphic)  return;
   hdc = GetDC(hdlg);
   map_dialog_rect(hdlg, box[0], box[1], box[2], box[3], out);
   w = out[2]-out[0];  h = out[3]-out[1];
-  if (w<ow || h<oh)  return(0);
+  if (w<ow || h<oh)  return;
   out[0] += (w-ow)/2;  out[1] += (h-oh)/2;  w = ow;  h = oh;
   src = malloc2(ow*oh*3);
   if (src) {
@@ -1924,12 +1927,12 @@ stereo_figure(HWND hdlg, long mode, long swap, STEREO *st)
         memcpy(src, PreviewGraphic+k*ow*oh*3, ow*oh*3); }
     dest = unlock2(src); }
   if (dest && BitsPixel<=8) {
-    src = PalettizeGraphic(w, h, 1, dest, 1, 0);
+    temp = PalettizeGraphic(w, h, 1, dest, 1, 0);
     free2(lock2(dest));
     pal = 1;
-    dest = src; }
+    dest = temp; }
   if (dest) {
-    bmp = GraphicToBMP(w, h, pal, dest);
+    bmp = (HANDLE)GraphicToBMP(w, h, pal, dest);
     free2(lock2(dest)); }
   if (bmp) {
     draw_bmp(hdc, out[0], out[1], bmp);
@@ -1942,8 +1945,8 @@ stereo_figure(HWND hdlg, long mode, long swap, STEREO *st)
   else               PreviewDelay = 1000;
 }
 
-stereogram(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
-           DATA *data)
+void stereogram(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
+                DATA *data)
 /* Convert information in the zbuffer into a single image image-based or
  *  random dot stereogram.
  * Enter: long w, h: size of output screen in pixels.
@@ -1959,7 +1962,7 @@ stereogram(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
   real inter=data->stereo.interocular[0];
   uchar rr, gg, bb;
 
-  if (!(buf=malloc2(w*sizeof(float))))  return(0);
+  if (!(buf=malloc2(w*sizeof(float))))  return;
   for (j=0; j<h; j++) {
     zd = j*w;  d = j*scan;
     memset(buf, -1, w*sizeof(float));
@@ -2144,7 +2147,7 @@ uchar *update_bmp(DATA *data, long w, long h, long *freeimg, long bits)
       break;
     default: ; }
   if (zbuf)  free2(zbuf);
-  bmp = pic;
+  bmp = (LPBITMAPINFOHEADER)pic;
   if ((bits<=8 && ColorTable && Hpal)) {
     scan8 = (w+3)&0x7FFFFFFC;
     s = d = 40+1024;
@@ -2162,7 +2165,7 @@ uchar *update_bmp(DATA *data, long w, long h, long *freeimg, long bits)
           dithernum+=3;  if (dithernum>2040) dithernum = rand()%100; }
     new = realloc2(pic, 40+1024+scan8*h);
     if (new)  pic = new;  scan = scan8;
-    bmp = pic;
+    bmp = (LPBITMAPINFOHEADER)pic;
     bmp->biBitCount = 8;
     for (i=0; i<256; i++) {
       pic[40+i*4]   = MasterPal[i*3+2];
@@ -2188,7 +2191,7 @@ uchar *update_bmp(DATA *data, long w, long h, long *freeimg, long bits)
   return(pic);
 }
 
-update_geo(HWND hwnd, DATA *data, HDC dc)
+void update_geo(HWND hwnd, DATA *data, HDC dc)
 /* Redraw a window containing a geometry, or just ensure that the DLT
  *  parameters are correct.
  * Enter: HWND hwnd: handle of window.
@@ -2201,8 +2204,8 @@ update_geo(HWND hwnd, DATA *data, HDC dc)
   LPBITMAPINFOHEADER bmp;
   static lastw=-1, lasth=-1;
 
-  if (IsIconic(hwnd))  return(0);
-  if (hwnd==SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0))
+  if (IsIconic(hwnd))  return;
+  if (hwnd==(HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0))
     if (HwndStat)
       SendMessage(HwndStat, SB_SETTEXT, 3, (LPARAM)DispInfo[0]);
   GetClientRect(hwnd, &rect);
@@ -2227,18 +2230,19 @@ update_geo(HWND hwnd, DATA *data, HDC dc)
       data->render.w = w2;  data->render.h = h2;
       if (data->render.process>=3)  data->render.process = 2; }
     prep_stereo(data); }
-  if (!dc)  return(0);
-  bmp = update_bmp(data, lastw=w, lasth=h, &freeimg, BitsPixel);
-  if (bmp)  draw_bmp2(dc, 0, 0, bmp);
+  if (!dc)  return;
+  bmp = (LPBITMAPINFOHEADER)update_bmp(data, lastw=w, lasth=h, &freeimg,
+                                       BitsPixel);
+  if (bmp)  draw_bmp2(dc, 0, 0, (uchar *)bmp);
   if (((data->dflag>>7)&3)==1 && data->render.process==2 &&
       data->render.lastw==w2 && data->render.lasth==h2 && data->render.buf
       && BitsPixel>16) {
-    free2(data->render.buf);  freeimg = 0;  data->render.buf = bmp;
+    free2(data->render.buf);  freeimg = 0;  data->render.buf = (uchar *)bmp;
     data->render.antialias = (data->render.antialias&0xFFFFFFF3)|(2<<2); }
   if (freeimg)  free2(bmp);
 }
 
-update_window(HWND hwnd)
+long update_window(HWND hwnd)
 /* Main paint routine for all windows.  This locks down the window, starts
  *  the paint process, then calls the appropriate sub-update routine.
  * Enter: HWND hwnd: handle to window to redraw.  The window is guaranteed
@@ -2248,8 +2252,7 @@ update_window(HWND hwnd)
   DATA *data;
   HDC hdc;
   PAINTSTRUCT paint;
-  HBRUSH new, old;
-  static HWND lasthwnd=-1;
+  static HWND lasthwnd=(HWND)-1;
 
   data = lock_window(hwnd);
   hdc = BeginPaint(hwnd, &paint);
@@ -2261,12 +2264,12 @@ update_window(HWND hwnd)
     update_geo(hwnd, data, hdc);
   EndPaint(hwnd, &paint);
   unlock_window(data);
-  if (hwnd==SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0))
+  if (hwnd==(HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0))
     recheck(hwnd, 0);
   return(1);
 }
 
-use_palette(uchar *pal)
+long use_palette(uchar *pal)
 /* Use a palette for palettization purposes.  This stores the palette in
  *  MasterPal and sets up the references in ColorTable.
  * Enter: uchar *pal: palette to use.
@@ -2315,22 +2318,4 @@ use_palette(uchar *pal)
   r = nr[0];  g = ng[0];  b = nb[0];
   ColorTable[(r<<11)+(g<<5)+b] = 0;
   return(2);
-}
-
-zone_geo(HWND hwnd, DATA *data, long xc, long yc, long *buf)
-/* Determine which zone of a geo window a point is in, and what the relative
- *  size and position within that zone is.
- * Enter: HWND hwnd: handle of window.
- *        DATA *data: locked down data area for this window.
- *        long xc, yc: absolute coordinates within window.
- *        long *buf: array for 7 return values.  These are: 0-null, 1-x
- *                   within zone; 2-y within zone, 3-x of zone's left edge,
- *                   4-y of zone's top edge, 5-width of zone in pixels,
- *                   6-height of zone in pixels.                4/2/97-DWM */
-{
-  RECT rect;
-
-  GetClientRect(hwnd, &rect);
-  buf[0] = 0;  buf[1] = xc;  buf[2] = yc;
-  buf[3] = 0;  buf[4] = 0;  buf[5] = rect.right;  buf[6] = rect.bottom;
 }

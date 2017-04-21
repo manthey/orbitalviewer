@@ -22,7 +22,7 @@ data.h: u\splash.jpg u\preview.jpg u\header.avi
 	data2c u\header.avi  +data.h AVIHeader    4 0 0 254
 dlt.obj: dlt.c dlt.h matrix.h
 	cl /c $(CL_OPTS) dlt.c
-draw.obj: draw.c orb.h ov.h ovrc.h preview.h
+draw.obj: draw.c draw.h orb.h ov.h ovrc.h preview.h
 	cl /c $(CL_OPTS) draw.c
 file.obj: file.c common.c orb.h ov.h ovrc.h
 	cl /c $(CL_OPTS) file.c
@@ -30,7 +30,7 @@ matrix.obj: matrix.c matrix.h
 	cl /c $(CL_OPTS) matrix.c
 orb.obj: orb.c orb.h
 	cl /c $(CL_OPTS) orb.c
-ov.obj: ov.c orb.h ov.h ovrc.h data.h
+ov.obj: ov.c orb.h ov.h ovrc.h data.h draw.h
 	cl /c $(CL_OPTS) ov.c
 ov.res: ov.rc ovrc.h u\tools.bmp
 	rc $(RC_OPTS) ov.rc
@@ -38,5 +38,6 @@ ov.res: ov.rc ovrc.h u\tools.bmp
 
 clean:
 	del *.obj
-
+	del *.res
+	del data.h
 

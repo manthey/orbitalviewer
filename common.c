@@ -1053,9 +1053,6 @@ long save_digistar(DATA *data)
 {
   FILE *fptr;
   long i;
-  #ifndef ANSIC
-    long clr, j, k;
-  #endif
 
   #ifndef ANSIC
     if (!(fptr=fopen(OpenName, "wt")))  return(2);

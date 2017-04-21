@@ -1,3 +1,6 @@
+#ifndef OVHEADER                                 /* Prevent double inclusion */
+#define OVHEADER 1
+
 #define real   double
 #define uchar  unsigned char
 #define ulong  unsigned long
@@ -177,3 +180,5 @@ extern real DistVal[], RadVal[];
 extern TBBUTTON ToolList[], ToolSep;
 extern WINDOWPLACEMENT WinPlace;
 extern uchar *ColorTable, *PreviewGraphic;
+
+#endif                                    /* End of prevent double inclusion */
