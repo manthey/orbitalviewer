@@ -1,0 +1,633 @@
+#include <windows.h>
+#include <commctrl.h>
+#include <dlgs.h>
+#include "ovrc.h"
+
+MainMenu MENU {
+  POPUP "&File" {
+    MENUITEM "&New...\t^N", MenuNew
+    MENUITEM "&Open...\t^O", MenuOpen
+    MENUITEM "&Save\t^S", MenuSave
+    MENUITEM "Save &As...\t^A", MenuSaveAs
+    MENUITEM "&Close\t^W", MenuClose
+    MENUITEM SEPARATOR
+    MENUITEM "&Preferences...", MenuPref
+    MENUITEM "Co&lors...", MenuColors
+    MENUITEM "Customize &Toolbar...", MenuCustom
+    MENUITEM "Lin&k Extensions...", MenuExt
+    MENUITEM SEPARATOR
+    MENUITEM "E&xit\tAlt-F4", MenuExit
+    MENUITEM SEPARATOR }
+  POPUP "&Edit" {
+    MENUITEM "&Copy\t^C", MenuCopy }
+  POPUP "&Display" {
+    MENUITEM "&Render Options...\tR", MenuRenderOpt
+    MENUITEM "&Point Options...\tP", MenuPointOpt
+    MENUITEM "Pol&ygon Options...\tY", MenuPolyOpt
+    MENUITEM "Ray&trace Options...\tT", MenuRayOpt
+    MENUITEM "&Asymptote Options...\tA", MenuAsymOpt
+    MENUITEM SEPARATOR
+    MENUITEM "&Orbitals...\tO", MenuOrb
+    MENUITEM "&Lighting...\tL", MenuLight
+    MENUITEM "&Stereo...\tS", MenuStereo
+    MENUITEM "&Camera...\tC", MenuCamera
+    MENUITEM "C&utaway...\tU", MenuCutAway
+    MENUITEM SEPARATOR
+    MENUITEM "Play Se&quence...\tQ", MenuSequence
+    MENUITEM "Stop Seque&nce", MenuStop
+    MENUITEM "Compress A&VI...", MenuCompAVI
+    MENUITEM SEPARATOR
+    POPUP "&Move" {
+      MENUITEM "&Left", MenuLeft
+      MENUITEM "&Right", MenuRight
+      MENUITEM "&Up", MenuUp
+      MENUITEM "&Down", MenuDown }
+    POPUP "Rotat&e" {
+      MENUITEM "&X-Axis -", MenuRotXM
+      MENUITEM "X-&Axis +", MenuRotXP
+      MENUITEM "&Y-Axis -", MenuRotYM
+      MENUITEM "Y-Ax&is +", MenuRotYP
+      MENUITEM "&Z-Axis -", MenuRotZM
+      MENUITEM "Z-Axi&s +", MenuRotZP }
+    POPUP "&Zoom" {
+      MENUITEM "&Zoom In\tkeypad Del", MenuZoomIn
+      MENUITEM "Z&oom Out\tkeypad Ins", MenuZoomOut
+      MENUITEM "&Decrease Focal Length", MenuFocalIn
+      MENUITEM "&Increase Focal Length", MenuFocalOut }
+    MENUITEM "Reset Pos&ition", MenuResetPos
+    MENUITEM "Re&frame Orbital", MenuReframe
+    MENUITEM "Set &Default", MenuDefault }
+  POPUP "&Window" {
+    MENUITEM "&Cascade", MenuCascade
+    MENUITEM "&Tile", MenuTile
+    MENUITEM "&Arrange Icons", MenuArrange }
+  POPUP "&Help" {
+    MENUITEM "&Help...\tF1", MenuHelp
+    MENUITEM "&Search Help...", MenuHelpS
+    MENUITEM SEPARATOR
+    MENUITEM "&About...", MenuAbout } }
+
+MainMenu ACCELERATORS {
+  VK_DECIMAL,MenuZoomIn,VIRTKEY
+  VK_DECIMAL,MenuFocalIn,VIRTKEY,CONTROL
+  VK_F1,MenuHelp,     VIRTKEY
+  VK_F6,MenuSwitch,   VIRTKEY
+  VK_F6,MenuSwitchBack,VIRTKEY,SHIFT
+  VK_F10,MenuZoom,    VIRTKEY
+  VK_INSERT,MenuCopy, VIRTKEY, CONTROL
+  VK_NUMPAD0,MenuZoomOut,VIRTKEY
+  VK_NUMPAD0,MenuFocalOut,VIRTKEY,CONTROL
+  VK_NUMPAD5,MenuResetPos,VIRTKEY
+  VK_NUMPAD5,MenuResetPos,VIRTKEY,SHIFT
+  "A",  MenuAsymOpt,  VIRTKEY
+  "A",  MenuSaveAs,   VIRTKEY, CONTROL
+  "B",  MenuAdvance,  VIRTKEY, CONTROL
+  "C",  MenuCamera,   VIRTKEY
+  "C",  MenuCopy,     VIRTKEY, CONTROL
+  "L",  MenuLight,    VIRTKEY
+  "N",  MenuNew,      VIRTKEY, CONTROL
+  "O",  MenuOrb,      VIRTKEY
+  "O",  MenuOpen,     VIRTKEY, CONTROL
+  "P",  MenuPointOpt, VIRTKEY
+  "Q",  MenuSequence, VIRTKEY
+  "R",  MenuRenderOpt,VIRTKEY
+  "S",  MenuStereo,   VIRTKEY
+  "S",  MenuSave,     VIRTKEY, CONTROL
+  "T",  MenuRayOpt,   VIRTKEY
+  "U",  MenuCutAway,  VIRTKEY
+  "W",  MenuClose,    VIRTKEY, CONTROL
+  "Y",  MenuPolyOpt,  VIRTKEY }
+
+ICON1   ICON   MOVEABLE PURE LOADONCALL DISCARDABLE u\icon1.ico
+
+CURSOR1 CURSOR MOVEABLE PURE LOADONCALL DISCARDABLE u\CURSOR1.CUR
+CURSOR2 CURSOR MOVEABLE PURE LOADONCALL DISCARDABLE u\CURSOR2.CUR
+
+TOOLBMP BITMAP MOVEABLE PURE LOADONCALL DISCARDABLE u\tools.bmp
+
+STRINGTABLE MOVEABLE IMPURE LOADONCALL DISCARDABLE
+BEGIN
+  MenuAbout,    "Display copyright information about Orbital Viewer."
+  MenuArrange,  "Line up the minimized window icons."
+  MenuAsymOpt,  "Change the opacity of the asymptotes."
+  MenuCamera,   "Numerically specify the camera location and the rendered picture size."
+  MenuCascade,  "Rearrange the non-minimized windows in a cascade pattern."
+  MenuClose,    "Close the active window."
+  MenuColors,   "Set the colors for the orbital."
+  MenuCopy,     "Copy the current screen to the clipboard."
+  MenuCustom,   "Customize the toolbar."
+  MenuCutAway,  "Specify a cutaway section to show the interior of an orbital."
+  MenuDefault,  "Set the default orbital to the current orbital."
+  MenuDown,     "Move the orbital down."
+  MenuExit,     "Exit Orbital Viewer."
+  MenuExt,      "Link file extensions to the Orbital Viewer program."
+  MenuFocalIn,  "Change to a flatter view (less perspective)."
+  MenuFocalOut, "Change to a more curved view (more perspective)."
+  MenuHelp,     "Show the help table of contents."
+  MenuHelpS,    "Search the help database."
+  MenuLeft,     "Move the orbital left."
+  MenuLight,    "Adjust the light source and shadowing."
+  MenuNew,      "Open a new window with the default orbital."
+  MenuOpen,     "Open an orbital file."
+  MenuOrb,      "Specify the orbital quantum numbers and other atomic parameters."
+  MenuPointOpt, "Set the point display probability and other options."
+  MenuPolyOpt,  "Set the polygon fineness, probability, and opacity."
+  MenuPref,     "Set preferences, including tool and status bars and warning and error messages."
+  MenuRayOpt,   "Set the raytracing fineness, probability, and opacity."
+  MenuReframe,  "Adjust the camera location to better fill the screen."
+  MenuRenderOpt,"Select point, polygon, or raytracing mode."
+  MenuResetPos, "Undo rotations, translations, and zoom."
+  MenuRight,    "Move the orbital right."
+  MenuRotXM,    "Rotate the orbital about the horizontal axis."
+  MenuRotXP,    "Rotate the orbital about the horizontal axis."
+  MenuRotYM,    "Rotate the orbital about the vertical axis."
+  MenuRotYP,    "Rotate the orbital about the vertical axis."
+  MenuRotZM,    "Rotate the orbital counterclockwise on the screen."
+  MenuRotZP,    "Rotate the orbital clockwise on the screen."
+  MenuSave,     "Save the current orbital specification."
+  MenuSaveAs,   "Save the current orbital specification to a new file."
+  MenuSequence, "Specify a sequence to record and start playing it."
+  MenuStereo,   "Specify stereo mode, interocular distance, and view point separation."
+  MenuStop,     "Stop the playback of a sequence."
+  MenuTile,     "Rearrange the non-minimized windows in a tile pattern."
+  MenuUp,       "Move the orbital up."
+  MenuZoomIn,   "Move closer to the orbital (increase its size)."
+  MenuZoomOut,  "Move farther from the orbital (decrease its size)."
+END
+
+Version1    VERSIONINFO MOVEABLE IMPURE LOADONCALL DISCARDABLE
+  FILEVERSION   1,0,0,2
+  PRODUCTVERSION    1,0,0,2
+  FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+  FILEFLAGS 0
+  FILEOS    VOS_NT_WINDOWS32
+  FILETYPE  VFT_APP
+  FILESUBTYPE   0
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904E4"
+        BEGIN
+            VALUE   "FileDescription",  "Orbital Viewer\0"
+            VALUE   "FileVersion",  "1.0\0"
+            VALUE   "OriginalFilename", "OV.EXE\0"
+            VALUE   "ProductName",  "Orbital Viewer\0"
+            VALUE   "ProductVersion",   "1.0\0"
+            VALUE   "LegalCopyright",   "Copyright 1997-2002 by David Manthey\0"
+            VALUE   "Product Description","Orbital Viewer illustrates hydrogenic electron orbitals using a wide variety of techniques.\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE   "Translation", 0x0409, 1252
+    END
+END
+
+AbDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE  10, 10, 156, 100
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP | 0x0004
+CAPTION "About Orbital Viewer"
+FONT 8, "MS Sans Serif"
+BEGIN
+    ICON    ICON1, IDC_STATIC   10,6,19,20
+    CTEXT           "Orbital Viewer", IDC_STATIC,   38,4,96,8, SS_LEFT
+    CTEXT           "", AbDate, 38,14,96,8, SS_LEFT
+    CTEXT           "Copyright 1997-2002 by David Manthey", IDC_STATIC,  17,36,129,8, SS_LEFT
+    CTEXT           "email: manthey@orbitals.com", IDC_STATIC,    17,57,129,8, SS_LEFT
+    CTEXT           "URL: http://www.orbitals.com/orb", IDC_STATIC,  7,66,149,10, SS_LEFT
+    DEFPUSHBUTTON   "Done", IDOK,    55,82,51,14, 0
+END
+
+AsymDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE   50, 50, 164, 85
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP | 0x0004
+CAPTION "Asymptote Options"
+FONT 8, "MS Sans Serif"
+BEGIN
+    RTEXT    "&Opacity:", IDC_STATIC,    30,10,32,8, SS_LEFT
+    EDITTEXT AsymEdit,  66,8,20,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT    "%", IDC_STATIC,    90,10,8,8, SS_LEFT
+    CONTROL  "Scroll bar", AsymScr, "ScrollBar", SBS_HORZ,    54,24,44,6
+    CONTROL  "&Wireframe", AsymWire, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,  112, 6,46,12
+    CONTROL  "Po&ints", AsymWire2, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,    112,18,46,12
+    RTEXT    "Polygon &Density:", IDC_STATIC,     5,40,57,8, SS_LEFT
+    EDITTEXT AsymDens,  66,38,20,12, ES_AUTOHSCROLL | ES_LEFT
+    CONTROL  "Scroll bar", AsymDScr, "ScrollBar", SBS_HORZ,    54,54,44,6
+    PUSHBUTTON "Au&to", AsymAuto,   112,37,35,14, 0
+    PUSHBUTTON      "Help", HelpHelp,    10, 69,40,14, 0
+    PUSHBUTTON      "Cancel", IDCANCEL,  70, 69,40,14, 0
+    DEFPUSHBUTTON   "Done", IDOK,       120, 69,40,14, 0
+END
+
+CamDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE   10, 10, 186, 194
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP | 0x0004
+CAPTION "Camera Options..."
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "&Fixed Image Size", CamFixed, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,  8,4,68,12
+    LTEXT           "&Width:", IDC_STATIC,  12,20,24,8, SS_LEFT
+    EDITTEXT        CamWidth,  40,20,32,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT           "&Height:", IDC_STATIC,     12,36,24,8, SS_LEFT
+    EDITTEXT        CamHeight,  40,36,32,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT           "Current radius:", IDC_STATIC,  4,60,68,8, SS_LEFT
+    LTEXT           "", CamRadius,    12,72,60,16, SS_LEFT
+    LTEXT           "Camera Location:", IDC_STATIC,    4,96,72,8, SS_LEFT
+    RTEXT           "&theta:", IDC_STATIC,   12,114,20,8, SS_LEFT
+    EDITTEXT        CamAng0,   36,112,36,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "&phi:", IDC_STATIC,    12,130,20,8, SS_LEFT
+    EDITTEXT        CamAng1,   36,128,36,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "p&si:", IDC_STATIC,   4,146,28,8, SS_LEFT
+    EDITTEXT        CamAng2,   36,144,36,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "Un&its:", IDC_STATIC,    12,160,20,8, SS_LEFT
+    COMBOBOX        CamRadUnit,   36,158,52,32, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    RTEXT           "&x:", IDC_STATIC,   108,114,12,8, SS_LEFT
+    EDITTEXT        CamPosX,   124,112,52,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "&y:", IDC_STATIC,   108,130,12,8, SS_LEFT
+    EDITTEXT        CamPosY,   124,128,52,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "&z:", IDC_STATIC,   108,146,12,8, SS_LEFT
+    EDITTEXT        CamPosZ,   124,144,52,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "&Units:", IDC_STATIC,   100,160,20,8, SS_LEFT
+    COMBOBOX        CamPosUnit,   124,158,52,48, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Help", HelpHelp,    10,178,40,14, 0
+    PUSHBUTTON      "Cancel", IDCANCEL,  92,178,40,14, 0
+    DEFPUSHBUTTON   "Done", IDOK,       142,178,40,14, 0
+END
+
+CheckDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE   10, 10, 202, 71
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP | 0x0004
+CAPTION "Orbital Viewer"
+FONT 8, "MS Sans Serif"
+BEGIN
+        ICON    IDI_QUESTION, IDC_STATIC,  8,8,20,20
+        CTEXT      ".", CheckText,  32,8,164,24, SS_LEFT
+        PUSHBUTTON "Save &All", CheckAll,   8,36,40,14, 0
+        PUSHBUTTON "Save N&one", CheckNone,  8,52,40,14, 0
+        DEFPUSHBUTTON "&Yes", IDYES,    60,43,40,14, 0
+        PUSHBUTTON "&No", IDNO,     108,43,40,14, 0
+        PUSHBUTTON "Cancel", IDCANCEL,  156,43,40,14, 0
+END
+
+ColorDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE    10, 10, 154, 169
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP | 0x0004
+CAPTION "Colors"
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "&Background",     ColorClr1,     8,  8,60,14, 0
+    PUSHBUTTON      "&Positive Phase", ColorClr2,     8, 32,60,14, 0
+    PUSHBUTTON      "&Negative Phase", ColorClr3,     8, 56,60,14, 0
+    PUSHBUTTON      "&Asymptote",      ColorClr4,     8, 80,60,14, 0
+    PUSHBUTTON      "Pre&view",        ColorClr5,     8,104,60,14, 0
+    CONTROL         "&Apply to all windows", ColorAll, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,  8,124,80,12
+    CONTROL         "Change &preferences", ColorPref, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,    8,136,80,12
+    PUSHBUTTON      "&Reset",        ColorReset,     104,129,40,14, 0
+    PUSHBUTTON      "Help", HelpHelp,    10,153,40,14, 0
+    PUSHBUTTON      "Cancel", IDCANCEL,  60,153,40,14, 0
+    DEFPUSHBUTTON   "Done", IDOK,       110,153,40,14, 0
+END
+
+CutDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE   10, 10, 186, 194
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP | 0x0004
+CAPTION "Cutaway Options..."
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "Cutaway Type:", IDC_STATIC,    8,4,52,8, SS_LEFT
+    CONTROL         "&None", CutType0, "Button", BS_AUTORADIOBUTTON,  12,16,40,12
+    CONTROL         "&Plane", CutType1, "Button", BS_AUTORADIOBUTTON,     12,28,40,12
+    CONTROL         "&Corner", CutType2, "Button", BS_AUTORADIOBUTTON,    12,40,40,12
+    CONTROL         "&Wedge", CutType3, "Button", BS_AUTORADIOBUTTON,     12,52,40,12
+    CONTROL  "&Surface", CutSurface, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,    12,68,48,12
+    CONTROL  "&Invert", CutInvert, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,      12,80,48,12
+    LTEXT           "Cutaway Location:", IDC_STATIC,    4,96,72,8, SS_LEFT
+    RTEXT           "&alpha:", IDC_STATIC,   12,114,20,8, SS_LEFT
+    EDITTEXT        CutAng0,   36,112,36,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "&beta:", IDC_STATIC,    12,130,20,8, SS_LEFT
+    EDITTEXT        CutAng1,   36,128,36,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "&gamma:", IDC_STATIC,   4,146,28,8, SS_LEFT
+    EDITTEXT        CutAng2,   36,144,36,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "Un&its:", IDC_STATIC,    12,160,20,8, SS_LEFT
+    COMBOBOX        CutRadUnit,   36,158,52,32, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    RTEXT           "&x:", IDC_STATIC,   108,114,12,8, SS_LEFT
+    EDITTEXT        CutPosX,   124,112,52,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "&y:", IDC_STATIC,   108,130,12,8, SS_LEFT
+    EDITTEXT        CutPosY,   124,128,52,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "&z:", IDC_STATIC,   108,146,12,8, SS_LEFT
+    EDITTEXT        CutPosZ,   124,144,52,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "Uni&ts:", IDC_STATIC,   100,160,20,8, SS_LEFT
+    COMBOBOX        CutPosUnit,   124,158,52,48, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Help", HelpHelp,    10,178,40,14, 0
+    PUSHBUTTON      "Cancel", IDCANCEL,  92,178,40,14, 0
+    DEFPUSHBUTTON   "Done", IDOK,       142,178,40,14, 0
+END
+
+LightDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE 10, 10, 207, 186
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP | 0x0004
+CAPTION "Light Source"
+FONT 8, "MS Sans Serif"
+BEGIN
+    RTEXT           "&Light:", IDC_STATIC,  12,10,24,8, SS_LEFT
+    COMBOBOX        LightList,    40,8,48,40, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    RTEXT           "&x:", IDC_STATIC,  23,36,12,8, SS_LEFT
+    EDITTEXT        LightEditX,   39,34,52,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "&y:", IDC_STATIC,  23,52,12,8, SS_LEFT
+    EDITTEXT        LightEditY,   39,50,52,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "&z:", IDC_STATIC,  23,68,12,8, SS_LEFT
+    EDITTEXT        LightEditZ,   39,66,52,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "Uni&ts:", IDC_STATIC,  7,82,28,8, SS_LEFT
+    COMBOBOX        LightUnits,   39,80,52,50, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "&Rotate with viewpoint", LightLocal, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,   10,108,84,12
+    RTEXT           "&Intensity:", IDC_STATIC,  8,138,36,8, SS_LEFT
+    EDITTEXT        LightEditI,  48,136,20,12, ES_AUTOHSCROLL | ES_LEFT
+    CONTROL         "Scroll bar", LightScrI, "ScrollBar", SBS_HORZ, 32,152,52,6
+    RTEXT           "&Ambiance:", IDC_STATIC,  104,138,42,8, SS_LEFT
+    EDITTEXT        LightEditA,  150,136,20,12, ES_AUTOHSCROLL | ES_LEFT
+    CONTROL         "Scroll bar", LightScrA, "ScrollBar", SBS_HORZ, 134,152,52,6
+    PUSHBUTTON      "A&dd", LightAdd,     104,7,36,14, 0
+    PUSHBUTTON      "D&elete", LightDel,  152,7,36,14, 0
+    PUSHBUTTON      "Help", HelpHelp,   10,170,40,14, 0
+    PUSHBUTTON      "Cancel", IDCANCEL,     114,170,40,14, 0
+    DEFPUSHBUTTON   "Done", IDOK,   164,170,40,14, 0
+END
+
+
+OrbDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE   10, 10, 208, 186
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP | 0x0004
+CAPTION "Orbital"
+FONT 8, "MS Sans Serif"
+BEGIN
+    RTEXT           "&Atom:", IDC_STATIC,   12,10,24,8, SS_LEFT
+    CONTROL         "", OrbList, "Combobox", CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP,   40,8,48,40
+    RTEXT           "&n:", IDC_STATIC,  16,34,12,8, SS_LEFT
+    EDITTEXT        OrbEditn,  32,32,20,12, ES_AUTOHSCROLL | ES_LEFT
+    CONTROL         "Scroll bar", OrbScrn, "ScrollBar", SBS_HORZ,    16,48,52,6
+    RTEXT           "&l:", IDC_STATIC,  16,62,12,8, SS_LEFT
+    EDITTEXT        OrbEditl,  32,60,20,12, ES_AUTOHSCROLL | ES_LEFT
+    CONTROL         "Scroll bar", OrbScrl, "ScrollBar", SBS_HORZ,    16,76,52,6
+    RTEXT           "&m:", IDC_STATIC,  16,90,12,8, SS_LEFT
+    EDITTEXT        OrbEditm,  32,88,20,12, ES_AUTOHSCROLL | ES_LEFT
+    CONTROL         "Scroll bar", OrbScrm, "ScrollBar", SBS_HORZ,    16,104,52,6
+    RTEXT           "P&rotons:", IDC_STATIC,    8,122,32,8, SS_LEFT
+    EDITTEXT        OrbEditP,   44,120,20,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "Ma&ss:", IDC_STATIC,   0,138,28,8, SS_LEFT
+    EDITTEXT        OrbEditMass,  32,136,52,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "&Units:", IDC_STATIC,   0,152,28,8, SS_LEFT
+    CONTROL         "", OrbMassUnit, "Combobox", CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP,   32,150,52,50
+    PUSHBUTTON      "A&dd", OrbAdd,    104,7,36,14, 0
+    PUSHBUTTON      "D&elete", OrbDel,     152,7,36,14, 0
+    RTEXT           "&Factor:", IDC_STATIC,     108,34,24,8, SS_LEFT
+    EDITTEXT        OrbEditF,          136,32,32,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "al&pha:", IDC_STATIC,  86, 54,20,8, SS_LEFT
+    EDITTEXT        OrbEditt,              110, 52,36,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "&beta:", IDC_STATIC,   86, 70,20,8, SS_LEFT
+    EDITTEXT        OrbEdith,              110, 68,36,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "&gamma:", IDC_STATIC,  80, 86,26,8, SS_LEFT
+    EDITTEXT        OrbEdits,              110, 84,36,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "Un&its:", IDC_STATIC,  150,62,28,8, SS_LEFT
+    CONTROL         "", OrbRadUnit, "Combobox", CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP,   150,72,52,32
+    RTEXT           "&x:", IDC_STATIC, 112,106,12,8, SS_LEFT
+    EDITTEXT        OrbEditX,          128,104,52,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "&y:", IDC_STATIC, 112,122,12,8, SS_LEFT
+    EDITTEXT        OrbEditY,          128,120,52,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "&z:", IDC_STATIC, 112,138,12,8, SS_LEFT
+    EDITTEXT        OrbEditZ,          128,136,52,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "Uni&ts:", IDC_STATIC,   96,152,28,8, SS_LEFT
+    CONTROL         "", OrbUnits, "Combobox", CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP,   128,150,52,50
+    PUSHBUTTON      "Help", HelpHelp,    10,170,40,14, 0
+    PUSHBUTTON      "Cancel", IDCANCEL, 114,170,40,14, 0
+    DEFPUSHBUTTON   "Done", IDOK,       164,170,40,14, 0
+END
+
+PointDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE   50, 50, 158, 80
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP | 0x0004
+CAPTION "Point Options"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT    "&Number of points:", IDC_STATIC,   10,14,60,8, SS_LEFT
+    EDITTEXT PointPoint,  74,12,32,12, ES_AUTOHSCROLL | ES_LEFT
+    CONTROL  "Scroll bar", PointScr, "ScrollBar", SBS_HORZ,    62,28,56,6
+    PUSHBUTTON "A&symptote Options", PointOpt,   78,40,72,14, 0
+    PUSHBUTTON      "Help", HelpHelp,    10, 64,40,14, 0
+    PUSHBUTTON      "Cancel", IDCANCEL,  64, 64,40,14, 0
+    DEFPUSHBUTTON   "Done", IDOK,       114, 64,40,14, 0
+END
+
+PolyDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE   50, 50, 268, 115
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP | 0x0004
+CAPTION "Polygon Options"
+FONT 8, "MS Sans Serif"
+BEGIN
+    RTEXT    "&Psi^2 probability: 10^", IDC_STATIC,    10,10,70,8, SS_LEFT
+    EDITTEXT PolyPsi,  84,8,40,12, ES_AUTOHSCROLL | ES_LEFT
+    CONTROL  "Scroll bar", PolyScrPsi, "ScrollBar", SBS_HORZ,    82,24,44,6
+    PUSHBUTTON "Au&to", PolyAuto,   135,7,35,14, 0
+    RTEXT    "P&ositive phase opacity:", IDC_STATIC,    10,40,80,8, SS_LEFT
+    EDITTEXT PolyEditP,  94,38,20,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT    "%", IDC_STATIC,   118,40,8,8, SS_LEFT
+    CONTROL  "Scroll bar", PolyScrP, "ScrollBar", SBS_HORZ,    82,54,44,6
+    RTEXT    "&Negative phase opacity:", IDC_STATIC,    10,70,80,8, SS_LEFT
+    EDITTEXT PolyEditN,  94,68,20,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT    "%", IDC_STATIC,   118,70,8,8, SS_LEFT
+    CONTROL  "Scroll bar", PolyScrN, "ScrollBar", SBS_HORZ,    82,84,44,6
+    PUSHBUTTON "A&symptote Options", PolyAsym,   180,7,72,14, 0
+    RTEXT    "&Density:", IDC_STATIC,     140,40,30,8, SS_LEFT
+    EDITTEXT PolyDens,  174,38,20,12, ES_AUTOHSCROLL | ES_LEFT
+    CONTROL  "Scroll bar", PolyScrD, "ScrollBar", SBS_HORZ,    162,54,44,6
+    RTEXT    "&Refine:", IDC_STATIC,     140,70,30,8, SS_LEFT
+    EDITTEXT PolyRefine,  174,68,20,12, ES_AUTOHSCROLL | ES_LEFT
+    CONTROL  "Scroll bar", PolyScrR, "ScrollBar", SBS_HORZ,    162,84,44,6
+    CONTROL  "&Wireframe", PolyWire, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,  218,36,46,12
+    CONTROL  "Po&ints", PolyWire2, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,    218,48,46,12
+    PUSHBUTTON      "Help", HelpHelp,    10, 99,40,14, 0
+    PUSHBUTTON      "Cancel", IDCANCEL, 174, 99,40,14, 0
+    DEFPUSHBUTTON   "Done", IDOK,       224, 99,40,14, 0
+END
+
+PrefDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE   10, 10, 229, 159
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP | 0x0004
+CAPTION "Preferences"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "Show &Error messages", PrefError, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,   8,8,92,8
+    CONTROL         "Show &Warning messages", PrefWarn, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,     8,20,92,8
+    CONTROL         "Show &Toolbar", PrefTool, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,  8,36,92,8
+    CONTROL         "Show Tool T&ips", PrefTips, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,    16,48,84,8
+    CONTROL         "Show &Status Line", PrefStatus, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,  8,60,92,8
+    CONTROL         "Show Start S&creen", PrefSplash, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,     8,76,92,8
+    LTEXT           "VRML files:", IDC_STATIC,  8,92,40,8, SS_LEFT
+    CONTROL         "Use &Diffuse Color", PrefDiffuse, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,     16,104,80,8
+    CONTROL         "Use &Ambient Color", PrefAmbient, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,     16,116,80,8
+    CONTROL         "Use E&missive Color", PrefEmissive, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,    16,128,80,8
+    LTEXT           "&Point size:", IDC_STATIC,     112,10,36,8, SS_LEFT
+    COMBOBOX        PrefPoint,   152,8,32,40, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "pixels", IDC_STATIC,   188,10,24,8, SS_LEFT
+    LTEXT           "Menu/Toolbar Step Sizes:", IDC_STATIC,     112,32,100,8, SS_LEFT
+    LTEXT           "R&otation:", IDC_STATIC,   120,46,36,8, SS_LEFT
+    EDITTEXT        PrefRad,  160,44,52,12, ES_AUTOHSCROLL | ES_LEFT
+    COMBOBOX        PrefRadUnit,   160,60,52,32, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "S&hift/Pan:", IDC_STATIC,  120,82,36,8, SS_LEFT
+    EDITTEXT        PrefPan,  160,80,28,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT           "% screen", IDC_STATIC,     192,82,32,8, SS_LEFT
+    LTEXT           "&Zoom:", IDC_STATIC,   120,98,36,8, SS_LEFT
+    EDITTEXT        PrefZoom,  160,96,28,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT           "% radius", IDC_STATIC,     192,98,32,8, SS_LEFT
+    PUSHBUTTON      "&Reset All", PrefReset,  144,120,52,14, 0
+    PUSHBUTTON      "Help", HelpHelp,    10,143,40,14, 0
+    PUSHBUTTON      "Cancel", IDCANCEL, 135,143,40,14, 0
+    DEFPUSHBUTTON   "Done", IDOK,       185,143,40,14, 0
+END
+
+ProgDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE   60, 40, 160, 60
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP | 0x0004
+CAPTION " "
+FONT 8, "MS Sans Serif"
+BEGIN
+    CTEXT           " ", ProgMessage,  4,6,152,18, SS_LEFT
+    LTEXT           " ", ProgLeft,     8,42, 100,8, SS_LEFT
+    PUSHBUTTON      "Cancel", IDCANCEL,  116,44,40,14, 0
+END
+
+RendDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE   50, 50, 211, 89
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP | 0x0004
+CAPTION "Rendering Method"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL "&Use Quick Rendering", RendQuick, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,     12,4,84,12
+    CTEXT   "Quick Rendering Method:", IDC_STATIC,                 8,20,92,8, SS_LEFT
+    CONTROL "&Points",     RendA1, "Button", BS_AUTORADIOBUTTON,  24,32,60,8
+    CONTROL "P&olygons",   RendA2, "Button", BS_AUTORADIOBUTTON,  24,44,60,8
+    CONTROL "&Raytraced", RendA3, "Button", BS_AUTORADIOBUTTON,  24,56,60,8
+    CTEXT   "Precise Rendering Method:", IDC_STATIC,             104,20,92,8, SS_LEFT
+    CONTROL "Po&ints",     RendB1, "Button", BS_AUTORADIOBUTTON, 120,32,60,8
+    CONTROL "Po&lygons",   RendB2, "Button", BS_AUTORADIOBUTTON, 120,44,60,8
+    CONTROL "Ray&traced", RendB3, "Button", BS_AUTORADIOBUTTON, 120,56,60,8
+    PUSHBUTTON      "Help", HelpHelp,    10, 73,40,14, 0
+    PUSHBUTTON      "Cancel", IDCANCEL, 117, 73,40,14, 0
+    DEFPUSHBUTTON   "Done", IDOK,       167, 73,40,14, 0
+END
+
+RenderDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE   50, 50, 270, 240
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP | 0x0004
+CAPTION "Raytrace Options"
+FONT 8, "MS Sans Serif"
+BEGIN
+    RTEXT    "&Psi^2 probability: 10^", IDC_STATIC,    10,10,70,8, SS_LEFT
+    EDITTEXT RendPsi,  84,8,40,12, ES_AUTOHSCROLL | ES_LEFT
+    CONTROL  "Scroll bar", RendScrPsi, "ScrollBar", SBS_HORZ,    82,24,44,6
+    PUSHBUTTON "Au&to", RendAuto,   135,7,35,14, 0
+    CTEXT    "Positive Phase", IDC_STATIC,   64,36,52,8, SS_LEFT
+    CTEXT    "Negative Phase", IDC_STATIC,  124,36,52,8, SS_LEFT
+    CTEXT    "Asymptote",      IDC_STATIC,  184,36,52,8, SS_LEFT
+    LTEXT    "Probability &opacity per step:", IDC_STATIC,    10,56,56,16, SS_LEFT
+    EDITTEXT RendEditP0,   82,54,20,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT    "%", IDC_STATIC,     106,56,8,8, SS_LEFT
+    CONTROL  "Scroll bar", RendScrP0, "ScrollBar", SBS_HORZ,  70,70,44,6
+    EDITTEXT RendEditN0,  142,54,20,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT    "%", IDC_STATIC,     166,56,8,8, SS_LEFT
+    CONTROL  "Scroll bar", RendScrN0, "ScrollBar", SBS_HORZ, 130,70,44,6
+    LTEXT    "S&urface opacity:", IDC_STATIC,    10,86,56,16, SS_LEFT
+    EDITTEXT RendEditP1,   82,84,20,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT    "%", IDC_STATIC,     106,86,8,8, SS_LEFT
+    CONTROL  "Scroll bar", RendScrP1, "ScrollBar", SBS_HORZ,  70,100,44,6
+    EDITTEXT RendEditN1,  142,84,20,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT    "%", IDC_STATIC,     166,86,8,8, SS_LEFT
+    CONTROL  "Scroll bar", RendScrN1, "ScrollBar", SBS_HORZ, 130,100,44,6
+    EDITTEXT RendEditA1,  202,84,20,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT    "%", IDC_STATIC,     226,86,8,8, SS_LEFT
+    CONTROL  "Scroll bar", RendScrA1, "ScrollBar", SBS_HORZ, 190,100,44,6
+    LTEXT    "&Interior opacity per step:", IDC_STATIC,    10,116,56,16, SS_LEFT
+    EDITTEXT RendEditP2,   82,114,20,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT    "%%", IDC_STATIC,     106,116,16,8, SS_LEFT
+    CONTROL  "Scroll bar", RendScrP2, "ScrollBar", SBS_HORZ,  70,130,44,6
+    EDITTEXT RendEditN2,  142,114,20,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT    "%%", IDC_STATIC,     166,116,16,8, SS_LEFT
+    CONTROL  "Scroll bar", RendScrN2, "ScrollBar", SBS_HORZ, 130,130,44,6
+    LTEXT    "Index of &refraction:", IDC_STATIC,    10,146,56,16, SS_LEFT
+    EDITTEXT RendEditPR,   82,144,20,12, ES_AUTOHSCROLL | ES_LEFT
+    CONTROL  "Scroll bar", RendScrPR, "ScrollBar", SBS_HORZ,  70,160,44,6
+    EDITTEXT RendEditNR,  142,144,20,12, ES_AUTOHSCROLL | ES_LEFT
+    CONTROL  "Scroll bar", RendScrNR, "ScrollBar", SBS_HORZ, 130,160,44,6
+    EDITTEXT RendEditAR,  202,144,20,12, ES_AUTOHSCROLL | ES_LEFT
+    CONTROL  "Scroll bar", RendScrAR, "ScrollBar", SBS_HORZ, 190,160,44,6
+    CONTROL  "&Link positive and negative phases", RendLink, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 58,172,124,12
+    RTEXT    "&Number of steps:", IDC_STATIC,    34,192,60,8, SS_LEFT
+    EDITTEXT RendStep,  102,190,32,12, ES_AUTOHSCROLL | ES_LEFT
+    CONTROL  "Scroll bar", RendScrStep, "ScrollBar", SBS_HORZ,    96,206,44,6
+    CONTROL  "Auto &Brightness", RendAutoB,   "Button", BS_AUTOCHECKBOX | WS_TABSTOP,   200,176,60,12
+    CONTROL  "&Antialias",       RendAnti,   "Button", BS_AUTOCHECKBOX | WS_TABSTOP,   200,188,60,12
+    CONTROL  "&Coarse Render",   RendCoarse, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,   200,200,60,12
+    PUSHBUTTON      "Help", HelpHelp,    10,224,40,14, 0
+    PUSHBUTTON      "Cancel", IDCANCEL, 176,224,40,14, 0
+    DEFPUSHBUTTON   "Done", IDOK,       226,224,40,14, 0
+END
+
+SeqDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE   10, 10, 237, 190
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP | 0x0004
+CAPTION "Play Sequence"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CTEXT           "Frame", IDC_STATIC,    28,8,28,8, SS_LEFT
+    CTEXT           "Orbital File", IDC_STATIC,     64,8,168,8, SS_LEFT
+    CONTROL         "&1:", SeqCheck1, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,  8,20,16,12
+    EDITTEXT        SeqFrame1,  28,20,28,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT           "", SeqName1,     64,22,168,8, SS_LEFT
+    CONTROL         "&2:", SeqCheck2, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,  8,36,16,12
+    EDITTEXT        SeqFrame2,  28,36,28,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT           "", SeqName2,     64,38,168,8, SS_LEFT
+    CONTROL         "&3:", SeqCheck3, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,  8,52,16,12
+    EDITTEXT        SeqFrame3,  28,52,28,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT           "", SeqName3,     64,54,168,8, SS_LEFT
+    CONTROL         "&4:", SeqCheck4, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,  8,68,16,12
+    EDITTEXT        SeqFrame4,  28,68,28,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT           "", SeqName4,     64,70,168,8, SS_LEFT
+    CONTROL         "&Incremental positions", SeqIncr, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,  28,88,100,12
+    CONTROL         "Be&zier interpolation", SeqBezier, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,  128,88,100,12
+    LTEXT           "&Base save file name:", IDC_STATIC,    8,114,68,8, SS_LEFT
+    EDITTEXT        SeqBase,  80,112,104,12, ES_AUTOHSCROLL | ES_LEFT
+    PUSHBUTTON      "B&rowse", SeqBrowse,     193,111,40,14, 0
+    LTEXT           "&File format:", IDC_STATIC,    36,130,40,8, SS_LEFT
+    COMBOBOX        SeqType,  80,128,48,48, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    RTEXT           "Frames &per second:", IDC_STATIC,   140,130,64,8, SS_LEFT
+    EDITTEXT        SeqFPS,   208,128,24,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "&Start frame:", IDC_STATIC,    8,154,40,8, SS_LEFT
+    EDITTEXT        SeqStart,  52,152,24,12, ES_AUTOHSCROLL | ES_LEFT
+    RTEXT           "&End frame:", IDC_STATIC,  84,154,40,8, SS_LEFT
+    EDITTEXT        SeqEnd,  128,152,24,12, ES_AUTOHSCROLL | ES_LEFT
+    PUSHBUTTON      "Done", IDOK,       193,151,40,14, 0
+    PUSHBUTTON      "Help", HelpHelp,    10,174,40,14, 0
+    PUSHBUTTON      "Cancel", IDCANCEL, 143,174,40,14, 0
+    DEFPUSHBUTTON   "&Play", SeqPlay,   193,174,40,14, 0
+END
+
+SplashDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE   10, 10, 320, 200
+STYLE DS_MODALFRAME | WS_POPUP | 0x0004
+FONT 8, "MS Sans Serif"
+BEGIN
+END
+
+SterDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE   10, 10, 239, 199
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP | 0x0004
+CAPTION "Stereo Options"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "&Monoscopic", SterMode1, "Button", BS_AUTORADIOBUTTON,   8, 8,60,12
+    CONTROL         "&Stereoscope",SterMode2, "Button", BS_AUTORADIOBUTTON,   8,20,60,12
+    CONTROL         "&Interlaced", SterMode3, "Button", BS_AUTORADIOBUTTON,   8,32,44,12
+    CONTROL         "&Red-blue ",  SterMode4, "Button", BS_AUTORADIOBUTTON,   8,44,40,12
+    CONTROL         "S&tereogram", SterMode5, "Button", BS_AUTORADIOBUTTON,   8,56,48,12
+    CONTROL         "&Overlay",    SterMode6, "Button", BS_AUTORADIOBUTTON,   8,68,36,12
+    CONTROL         "&Chromadepth",SterMode7, "Button", BS_AUTORADIOBUTTON,   8,80,76,12
+    CONTROL         "S&wap", SterSwap3, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,    60,32,30,12
+    CONTROL         "Sw&ap", SterSwap4, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,    60,44,30,12
+    RTEXT           "I&nterocular distance:", SterOcularText,   8,114,68,8, SS_LEFT
+    EDITTEXT        SterOcular,  80,112,52,12, ES_AUTOHSCROLL | ES_LEFT
+    LTEXT           "pixels", SterOcularPix,   136,114,20,8, SS_LEFT
+    RTEXT           "Actua&l separation:", SterSepText,  8,130,68,8, SS_LEFT
+    EDITTEXT        SterSep,  80,128,52,12, ES_AUTOHSCROLL | ES_LEFT
+    COMBOBOX        SterUnits,  136,128,52,50, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "A&uto", SterSepAuto, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,    200,128,28,12
+    RTEXT           "&Perspective factor:", IDC_STATIC,     8,146,68,8, SS_LEFT
+    EDITTEXT        SterPerspect,  80,144,52,12, ES_AUTOHSCROLL | ES_LEFT
+    CONTROL         "Stereogram ima&ge:", SterImage, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,   12,164,72,12
+    LTEXT           "None", SterImageName,   88,166,136,8, SS_LEFT
+    PUSHBUTTON      "Help", HelpHelp,    10,183,40,14, 0
+    PUSHBUTTON      "Cancel", IDCANCEL, 145,183,40,14, 0
+    DEFPUSHBUTTON   "Done", IDOK,       195,183,40,14, 0
+END
+
