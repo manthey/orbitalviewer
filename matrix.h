@@ -34,7 +34,7 @@ lmatrix *lmat          (double *a);
 long     lmatadd       (double c, lmatrix *a, double d, lmatrix *b,
                         lmatrix *caplusdb);
 double   lmatdet       (lmatrix *a);
-long     lmatdup       (lmatrix *a, lmatrix *adup);
+void     lmatdup       (lmatrix *a, lmatrix *adup);
 void     lmatident     (lmatrix *i, long size);
 long     lmatinv       (lmatrix *a, lmatrix *ainv);
 long     lmatmul       (lmatrix *a, lmatrix *b, lmatrix *amulb);
@@ -63,7 +63,7 @@ matrix  *mat           (float *a);
 long     matadd        (float c, matrix *a, float d, matrix *b,
                         matrix *caplusdb);
 double   matdet        (matrix *a);
-long     matdup        (matrix *a, matrix *adup);
+void     matdup        (matrix *a, matrix *adup);
 void     matident      (matrix *i, long size);
 long     matinv        (matrix *a, matrix *ainv);
 long     matmul        (matrix *a, matrix *b, matrix *amulb);

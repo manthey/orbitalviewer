@@ -6,7 +6,6 @@
 #include <math.h>
 #include "matrix.h"
 
-#ifdef used
 void abgtomat(float *r, float alpha, float beta, float gamma)
 /* Convert a set of alpha, beta, gammera angles to a 3x3 orthonormal rotation
  *  matrix.
@@ -158,7 +157,7 @@ long eigenvect(float *m, float *l, float *ev, long column)
 {
   double emc[10], avg;
   lmatrix *em=lmat(emc);
-  long i, j;
+  long i;
 
   for (i=0; i<3; i++) {
     em->w = 3;  em->h = 2;
@@ -179,7 +178,6 @@ long eigenvect(float *m, float *l, float *ev, long column)
     ev[i*(3-2*column)+(2+4*column)] =           avg; }
   return(0);
 }
-#endif
 
 void labgtomat(double *r, double alpha, double beta, double gamma)
 /* Convert a set of alpha, beta, gammera angles to a 3x3 orthonormal rotation
@@ -268,7 +266,6 @@ long lcubic(double *coef, double *roots)
   return(0);
 }
 
-#ifdef used
 double ldot_product(double *v1, double *v2)
 /* Compute the dot product of two vectors.
  * Enter: double *v1: array of double values representing the first vector.
@@ -363,7 +360,7 @@ long leigenvect(double *m, double *l, double *ev, long column)
 {
   double emc[10], avg;
   lmatrix *em=lmat(emc);
-  long i, j;
+  long i;
 
   for (i=0; i<3; i++) {
     em->w = 3;  em->h = 2;
@@ -384,7 +381,6 @@ long leigenvect(double *m, double *l, double *ev, long column)
     ev[i*(3-2*column)+(2+4*column)] =           avg; }
   return(0);
 }
-#endif
 
 long lleast(lmatrix *a, double *coef, double weight)
 /* Adds a set of coefficients to the upper triangle of a matrix for use in a
@@ -420,7 +416,6 @@ lmatrix *lmat(double *a)
   return(c);
 }
 
-#ifdef used
 long lmatadd(double c, lmatrix *a, double d, lmatrix *b, lmatrix *caplusdb)
 /* Computes the matrix function c*a+d*b, where a and b are both n x m
  *  matrices, and c and d are both scalar values.
@@ -465,9 +460,8 @@ double lmatdet(lmatrix *a)
     d = d + (1-(k%2)*2) * lmatdet(subm) * a->m[s*size+(s-k)]; }
   return(d);
 }
-#endif
 
-long lmatdup(lmatrix *a, lmatrix *adup)
+void lmatdup(lmatrix *a, lmatrix *adup)
 /* Duplicate the matrix a.
  * Enter: lmatrix *a: original matrix.
  *        lmatrix *adup: location to place copy of a.          8/16/94-DWM */
@@ -490,7 +484,6 @@ void lmatident(lmatrix *i, long size)
     i->m[j*(size+1)] = 1;
 }
 
-#ifdef used
 long lmatinv(lmatrix *a, lmatrix *ainv)
 /* Invert a square matrix.  The input matrix is changed to the identity
  *  matrix.
@@ -504,7 +497,6 @@ long lmatinv(lmatrix *a, lmatrix *ainv)
   lmatident(ainv, a->w);
   return(lrowreduce2(a, ainv));
 }
-#endif
 
 long lmatmul(lmatrix *a, lmatrix *b, lmatrix *amulb)
 /* Computes the matrix function a*b, where a is an n x m matrix and b is an
@@ -527,7 +519,6 @@ long lmatmul(lmatrix *a, lmatrix *b, lmatrix *amulb)
   return(0);
 }
 
-#ifdef used
 void lmatscale(lmatrix *a, double scalar, lmatrix *result)
 /* Multiply a matrix by a scalar value.
  * Enter: lmatrix *a: pointer to matrix.
@@ -559,7 +550,6 @@ long lmatsub(lmatrix *a, lmatrix *b, lmatrix *aminusb)
   aminusb->h = a->h;
   return(0);
 }
-#endif
 
 long lmatsym(lmatrix *a)
 /* Make the specified matrix symmetrical.  This is done by copying the upper
@@ -625,7 +615,6 @@ void lmattoang(double *r, double *a)
       a[0] *= -1;  }
 }
 
-#ifdef used
 void lmattoypr(double *r, double *a)
 /* Convert a 3x3 orthonormal matrix to a set of yaw, pitch, and roll angles.
  * Enter: double *r: pointer to array of nine values.
@@ -638,7 +627,6 @@ void lmattoypr(double *r, double *a)
   a[1] = asin(r[8]);
   if (cos(a[1])*sin(a[0])*r[6]<0)  a[1] = PI-a[1];
 }
-#endif
 
 void lmattrans(lmatrix *a, lmatrix *atrans)
 /* Compute the transpose of a matrix.
@@ -665,7 +653,6 @@ void lmatzero(lmatrix *a)
     a->m[i] = 0;
 }
 
-#ifdef used
 double *lqconj(double *a, double *astar)
 /* Conjugate a quaternion.  The quarternions are 3 dimensional.  The format
  *  is (s, v1, v2, v3), where s is the scalar part of the quarternion, and v1
@@ -849,7 +836,6 @@ void lrotate_fit(double *XYZ, double *xyz, long fitstart, long fitnum,
       xyz[i*3+1] = y[0]*r->m[3]+y[1]*r->m[4]+y[2]*r->m[5]+t[1];
       xyz[i*3+2] = y[0]*r->m[6]+y[1]*r->m[7]+y[2]*r->m[8]+t[2]; }
 }
-#endif
 
 long lrowreduce(lmatrix *a)
 /* Row reduce a matrix.  The matrix must be at least as wide as it is high.
@@ -884,7 +870,6 @@ long lrowreduce(lmatrix *a)
   return(0);
 }
 
-#ifdef used
 long lrowreduce2(lmatrix *a, lmatrix *b)
 /* Row reduce matrix a, modifying matrix b in the same manner.  Matrix a must
  *  be at least as wide as it is high, and matrix b must be the same height
@@ -931,7 +916,6 @@ long lrowreduce2(lmatrix *a, lmatrix *b)
           b->m[j*w2+k] -= b->m[iw2+k]*temp; } }
   return(0);
 }
-#endif
 
 double *lunit(double *v, double *r)
 /* Compute the unit vector of the given vector.  If the vector is the zero
@@ -955,7 +939,6 @@ double *lunit(double *v, double *r)
   return(r);
 }
 
-#ifdef used
 void lyprtomat(double *rot, double y, double p, double r)
 /* Convert a set of roll, pitch, and yaw angles to a 3x3 orthonormal rotation
  *  matrix.  This is actually the matrix
@@ -1033,7 +1016,7 @@ double matdet(matrix *a)
   return(d);
 }
 
-long matdup(matrix *a, matrix *adup)
+void matdup(matrix *a, matrix *adup)
 /* Duplicate the matrix a.
  * Enter: matrix *a: original matrix.
  *        matrix *adup: location to place copy of a.           8/16/94-DWM */
@@ -1537,4 +1520,3 @@ void yprtomat(float *rot, float y, float p, float r)
   rot[4] = sin(p)*cos(r)*cos(y)-sin(r)*sin(y);  rot[5] = cos(p)*cos(r);
   rot[6] = cos(p)*sin(y);  rot[7] = -cos(p)*cos(y);  rot[8] = sin(p);
 }
-#endif

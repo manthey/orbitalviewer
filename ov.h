@@ -20,7 +20,7 @@
 #define NEGCOLOR         2
 #define ASYMCOLOR        3
 #define PREVIEWCOLOR     4
-#define NUMCOLORS        5
+#define NUMPREFCOLORS    5
 
 #define sq(x)    ((x)*(x))
 
@@ -49,7 +49,7 @@ typedef struct PREF {
   float radstep, panstep, zoomstep;
   long pointsize;                           /* 0-1 pixel, 1-3 pixels, etc. */
   float perspec;
-  long colors[NUMCOLORS]; } PREF;
+  long colors[NUMPREFCOLORS]; } PREF;
 typedef struct DATA {
   long dflag;                         /* see comments after structure list */
   long changed, filetype;

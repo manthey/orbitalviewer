@@ -34,22 +34,6 @@
 #define nfac  2*PI*a0*a0*a0
 #define sqrt2 1.41421356237309504876L
 
-#ifdef ANSIC
-  #define atan2l atan2
-  #define cosl   cos
-  #define expl   exp
-  #define sinl   sin
-  #define sqrtl  sqrt
-#else
-  double atan2l(double y, double x);
-  double cosl  (double x);
-  double expl  (double x);
-  double sinl  (double x);
-  double sqrtl (double x);
-#endif
-#define fabsl  fabs
-#define powl   pow
-
 #define StereoMONOSCOPIC    0
 #define StereoSTEREOSCOPE   1
 #define StereoINTERLACED    2

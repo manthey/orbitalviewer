@@ -2,10 +2,6 @@
  *  are identical or very similar between the ANSI C and Windows versions.
  *  The ANSI version has the constant ANSIC defined.           1/18/98-DWM */
 
-/* Uncomment the below two lines for crummy c compilers.                   */
-/* #define stricmp strcasecmp */
-/* #define strnicmp strncasecmp */
-
 long Endian=0;                      /* 0-little endian (IBM), 1-big endian */
 float DefSize=0;
 char OrbLet[]="spdfghiklmnoqrtuvwxyz";
@@ -13,27 +9,156 @@ char VRMLCheck1[]="#VRML V1.0 ascii";
 
 char *AsymKey[]={"Density","Opacity","Style",0};
 char *AtomKey[]={
-     "n",             "l",              "m",     "Neutrons(N)","Protons(Z)","Mass(kg)","CenterX(m)","CenterY(m)","CenterZ(m)","AngleAlpha(rad)",
-     "AngleBeta(rad)","AngleGamma(rad)","Factor", 0};
-char *CutKey[]={"Type","Surface","Invert","PositionX(m)","PositionY(m)","PositionZ(m)","AngleAlpha(rad)","AngleBeta(rad)","AngleGamma(rad)",0};
-char *LightKey[]={"PositionX(m)","PositionY(m)","PositionZ(m)","Intensity","Ambience","Local",0};
+    "n",
+    "l",
+    "m",
+    "Neutrons(N)",
+    "Protons(Z)",
+    "Mass(kg)",
+    "CenterX(m)",
+    "CenterY(m)",
+    "CenterZ(m)",
+    "AngleAlpha(rad)",
+    "AngleBeta(rad)",
+    "AngleGamma(rad)",
+    "Factor",
+    0};
+char *CutKey[]={
+    "Type",
+    "Surface",
+    "Invert",
+    "PositionX(m)",
+    "PositionY(m)",
+    "PositionZ(m)",
+    "AngleAlpha(rad)",
+    "AngleBeta(rad)",
+    "AngleGamma(rad)",
+    0};
+char *LightKey[]={
+    "PositionX(m)",
+    "PositionY(m)",
+    "PositionZ(m)",
+    "Intensity",
+    "Ambience",
+    "Local",
+    0};
 char *OrbKey[]={
-     "DefaultPerspective","BackgroundColor","PositiveColor", "NegativeColor","AsymptoteColor","PreviewColor",     "UseQuickRender",  "QuickRenderMode", "RenderMode",      "FixedSize",
-     "FixedWidth",        "FixedHeight",    "FileName",      "Scale(m)",     "Perspective",   "LastWidth",        "LastHeight",      "CameraCenterX(m)","CameraCenterY(m)","CameraCenterZ(m)",
-     "CameraTheta(rad)",  "CameraPhi(rad)", "CameraPsi(rad)","CameraCx",     "Atom",          "EndAtom",          "Light",           "EndLight",        "Psi^2(log10)",    "Cutaway",
-     "EndCutaway",        "Stereo",         "EndStereo",     "Points",       "EndPoints",     "Polygons",         "EndPolygons",     "Asymptotes",      "EndAsymptotes",   "Raytrace",
-     "EndRaytrace",       "Frame",          "LastFrame",     "Sequence",     "SequenceBase",  "SequenceIncrement","SequenceFileType","EndOfFile",       "SequenceBezier",  "FramesPerSecond",
-     0};
+    "DefaultPerspective",
+    "BackgroundColor",
+    "PositiveColor",
+    "NegativeColor",
+    "AsymptoteColor",
+    "PreviewColor",
+    "UseQuickRender",
+    "QuickRenderMode",
+    "RenderMode",
+    "FixedSize",
+    "FixedWidth",
+    "FixedHeight",
+    "FileName",
+    "Scale(m)",
+    "Perspective",
+    "LastWidth",
+    "LastHeight",
+    "CameraCenterX(m)",
+    "CameraCenterY(m)",
+    "CameraCenterZ(m)",
+    "CameraTheta(rad)",
+    "CameraPhi(rad)",
+    "CameraPsi(rad)",
+    "CameraCx",
+    "Atom",
+    "EndAtom",
+    "Light",
+    "EndLight",
+    "Psi^2(log10)",
+    "Cutaway",
+    "EndCutaway",
+    "Stereo",
+    "EndStereo",
+    "Points",
+    "EndPoints",
+    "Polygons",
+    "EndPolygons",
+    "Asymptotes",
+    "EndAsymptotes",
+    "Raytrace",
+    "EndRaytrace",
+    "Frame",
+    "LastFrame",
+    "Sequence",
+    "SequenceBase",
+    "SequenceIncrement",
+    "SequenceFileType",
+    "EndOfFile",
+    "SequenceBezier",
+    "FramesPerSecond",
+    0};
 char *OrbPhrase[]={
-     "No",         "Yes",       "Points", "Polygons",  "Raytrace","None",       "Plane","Corner","Wedge","Monoscopic",
-     "Stereoscope","Interlaced","RedBlue","Stereogram","Overlay", "Chromadepth","Left", "Right", "Solid","Wireframe",
-     "Points",     "PPM",       "TIF",    "BMP",       "AVI",     "End",     0};
-char *PointsKey[]={"Points",0};
-char *PolyKey[]={"Density","Refinement","PositiveOpacity","NegativeOpacity","Style",0};
+    "No",
+    "Yes",
+    "Points",
+    "Polygons",
+    "Raytrace",
+    "None",
+    "Plane",
+    "Corner",
+    "Wedge",
+    "Monoscopic",
+    "Stereoscope",
+    "Interlaced",
+    "RedBlue",
+    "Stereogram",
+    "Overlay",
+    "Chromadepth",
+    "Left",
+    "Right",
+    "Solid",
+    "Wireframe",
+    "Points",
+    "PPM",
+    "TIF",
+    "BMP",
+    "AVI",
+    "End",
+    0};
+char *PointsKey[]={
+    "Points",
+    0};
+char *PolyKey[]={
+    "Density",
+    "Refinement",
+    "PositiveOpacity",
+    "NegativeOpacity",
+    "Style",
+    0};
 char *RenderKey[]={
-     "PosProbOpacity","PosSurfaceOpacity","PosInteriorOpacity","NegProbOpacity","NegSurfaceOpacity","NegInteriorOpacity","AsymptoteOpacity","PositiveRefraction","NegativeRefraction","AsymptoteRefraction",
-     "Steps",         "AutoBrightness","Coarse",         "Antialias",     0};
-char *StereoKey[]={"Mode","TopScanline","RedSide","AutoSeparation","UseImage","Interocular","StereoscopeInter","Separation(m)","ImageName",0};
+    "PosProbOpacity",
+    "PosSurfaceOpacity",
+    "PosInteriorOpacity",
+    "NegProbOpacity",
+    "NegSurfaceOpacity",
+    "NegInteriorOpacity",
+    "AsymptoteOpacity",
+    "PositiveRefraction",
+    "NegativeRefraction",
+    "AsymptoteRefraction",
+    "Steps",
+    "AutoBrightness",
+    "Coarse",
+    "Antialias",
+    0};
+char *StereoKey[]={
+    "Mode",
+    "TopScanline",
+    "RedSide",
+    "AutoSeparation",
+    "UseImage",
+    "Interocular",
+    "StereoscopeInter",
+    "Separation(m)",
+    "ImageName",
+    0};
 
 void camera_rotate(double *renderval, double *renderdlt, double *phys,
                    long dir)
@@ -199,7 +324,7 @@ long new_window_mid(DATA *data)
   #else
     memset(&data->pref, 0, sizeof(PREF));
     data->pref.perspec = 25;
-    for (i=0; i<NUMCOLORS; i++)
+    for (i=0; i<NUMPREFCOLORS; i++)
       data->pref.colors[i] = -1;
   #endif
   data->mol.Psi = 1e-4;  data->mol.EffScale = 1024;
@@ -265,8 +390,8 @@ long open_orb(FILE *fptr, DATA *data, long noheader)
   double rval, phys[10];
   OATOM *newp;
   LIGHT *newl;
-  uchar *img;
   #ifndef ANSIC
+    uchar *img;
     GV gv;
   #endif
 
@@ -536,7 +661,7 @@ void play_frame(DATA *data, long frame)
   memcpy(&old, data, sizeof(DATA));
   memcpy(&oldp, data->mol.orb, sizeof(OATOM));
   memcpy(&oldl, data->mol.ls, sizeof(LIGHT));
-  for (i=0; i<NUMCOLORS; i++) {                                  /* Colors */
+  for (i=0; i<NUMPREFCOLORS; i++) {                                /* Colors */
     for (j=0; j<4; j++)
       if (seq[j]->pref.colors[i]!=-1) break;
     if (j==4)
@@ -747,7 +872,7 @@ void render_dlt(long numnode, float *node, long w, long h, float perspec,
  *                        initdlt.                            11/11/96-DWM */
 {
   double size=0.9;                                        /* Size on screen */
-  double minx[6], *center=renderval+7, phys[10], z;
+  double minx[6], *center=renderval+7, phys[10];
   double scale, back=perspec;
   long i, j;
   double rc[11], ang[3];
@@ -916,7 +1041,6 @@ void render_physical(double *val, double *dlt, double *phys, lmatrix *ang)
   if (!phys)  return;
   phys[3] = phys[4] = size*val[1]*(double)min(val[2], val[3]);
   phys[5] = val[2]*0.5;  phys[6] = val[3]*0.5;
-  return;
 }
 
 long save_digistar(DATA *data)
@@ -928,7 +1052,10 @@ long save_digistar(DATA *data)
  *                    error.                                    1/4/98-DWM */
 {
   FILE *fptr;
-  long clr, i, j, k;
+  long i;
+  #ifndef ANSIC
+    long clr, j, k;
+  #endif
 
   #ifndef ANSIC
     if (!(fptr=fopen(OpenName, "wt")))  return(2);

@@ -12,22 +12,6 @@
 real CutGrad[3], CutProximity, SurfaceXYZ[3], ToJump;
 long CutSurf;
 
-#ifndef ANSIC
-double atan2l(double y, double x)
-/* Mimic the c function atan2.
- * Enter: double y, x: initial values.  Any values are allowed [sic].
- * Exit:  double atan2x: atan2(x).                              1/4/94-DWM */
-{
-  _asm {
-          fld y
-          fld x
-          fpatan
-          fstp x
-    }
-  return(x);
-}
-#endif
-
 real calc_grad(real *r, OATOM *p, long mag)
 /* Calculate the cartesian gradient at the last point that probability was
  *  calculated for a particular atom.  Note that the gradient calculated is
@@ -64,14 +48,14 @@ real calc_grad(real *r, OATOM *p, long mag)
       gt = cons*p->lrf*p->lpf*(p->am*ct*p->ltf/st-st*p->lstm*sum)/p->lr;
     else
       gt = -cons*p->lrf*p->lpf*st*sum/p->lr;
-    if (p->m>0)  gp =  cosl(p->m*p->lp);
-    else         gp = -sinl(p->m*p->lp);
+    if (p->m>0)  gp =  cos(p->m*p->lp);
+    else         gp = -sin(p->m*p->lp);
     gp = cons*p->lrf*p->ltf*gp*sqrt2*p->m/(p->lr*st); }
   else
     gt = gp = 0;
   if (mag)
-    return(sqrtl(gt*gt+gp*gp+gr*gr));
-  cp = cosl(p->lp);  sp = sinl(p->lp);
+    return(sqrt(gt*gt+gp*gp+gr*gr));
+  cp = cos(p->lp);  sp = sin(p->lp);
   r[0] = gr*st*cp - gp*sp + gt*ct*cp;
   r[1] = gr*st*sp + gp*cp + gt*ct*sp;
   r[2] = gr*ct            - gt*st;
@@ -90,7 +74,7 @@ real calc_grad_mag(MOLECULE *mol)
   if (mol->nump==1)
     return(calc_grad(r, mol->orb, 1));
   calc_grad_total(r, mol);
-  return(sqrtl(r[0]*r[0]+r[1]*r[1]+r[2]*r[2]));
+  return(sqrt(r[0]*r[0]+r[1]*r[1]+r[2]*r[2]));
 }
 
 void calc_grad_total(real *r, MOLECULE *mol)
@@ -127,17 +111,17 @@ real calc_prob(real *x, OATOM *p)
 
   tx[0] = x[0]-p->x[0];  tx[1] = x[1]-p->x[1];  tx[2] = x[2]-p->x[2];
   if (!p->identity)  transform2(tx, tx, p->matm);
-  p->lr = r = sqrtl((sum=(tx[0]*tx[0]+tx[1]*tx[1]))+tx[2]*tx[2]);
+  p->lr = r = sqrt((sum=(tx[0]*tx[0]+tx[1]*tx[1]))+tx[2]*tx[2]);
   if (!r) return(0);
-  p->lts = st = sqrtl(sum)/r;
+  p->lts = st = sqrt(sum)/r;
   p->ltc = ct = tx[2]/r;
-  if (tx[0])  p->lp = ph = atan2l(tx[1], tx[0]);
+  if (tx[0])  p->lp = ph = atan2(tx[1], tx[0]);
   else        p->lp = ph = PI2 + PI*(tx[1]<0);
   p->lrzna = lrzna = r*p->zna;
   sum = p->crs[0];
   for (j=1; j<=p->nml1; j++)
     sum = sum*lrzna+p->crs[j];
-  p->lrf = (p->lrle=powr(r, p->l)*expl(-lrzna))*sum;
+  p->lrf = (p->lrle=powr(r, p->l)*exp(-lrzna))*sum;
   if (p->lmam2)  p->ltc2 = ct2 = ct*ct;
   sum = p->cts[0];
   for (j=1; j<=p->lmam2; j++)
@@ -147,9 +131,9 @@ real calc_prob(real *x, OATOM *p)
   if (!ct) { if (p->lmam<2)  sum = 1;  else sum = 0; }
   if (st)          p->ltf = (p->lstm=powr(st, p->am))*sum;
   else             p->ltf = (!p->m)*sum;
-  if (p->m>0)      p->lpf = sqrt2*sinl(p->m*ph);
+  if (p->m>0)      p->lpf = sqrt2*sin(p->m*ph);
   else if (!p->m)  p->lpf = 1;
-  else             p->lpf = sqrt2*cosl(p->m*ph);
+  else             p->lpf = sqrt2*cos(p->m*ph);
   p->lpsi = psi = p->cc*p->lrf*p->ltf*p->lpf;
   return(psi);
 }
@@ -180,28 +164,13 @@ real *calc_unit(real *v)
 {
   real total;
 
-  total = sqrtl(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
+  total = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
   if (total) {
     v[0] /= total;
     v[1] /= total;
     v[2] /= total; }
   return(v);
 }
-
-#ifndef ANSIC
-double cosl(double x)
-/* Mimic the c function cos.
- * Enter: double x: initial value.
- * Exit:  double cosx: cos(x).                                  1/4/94-DWM */
-{
-  _asm {
-          fld x
-          fcos
-          fstp x
-    }
-  return(x);
-}
-#endif
 
 real *cross(real *v1, real *v2, real *r)
 /* Compute the cross product of two vectors.  The result may replace one of
@@ -329,34 +298,6 @@ long cut_zone(real *x, CUTAWAY *cut, long zero)
   return(0);
 }
 
-#ifndef ANSIC
-double expl(double y)
-/* Compute e^y.  Handles y appropriately for all values.  No quick bailout
- *  occurs if y is zero.
- * Enter: double y: y
- * Exit:  double expy: e^y.                                     1/3/93-DWM */
-{
-  double const1=1;
-
-  _asm {
-          fld y
-          fldl2e
-          fmul
-          fld st(0)
-          frndint
-          fxch
-          fld st(1)
-          fsub
-          f2xm1
-          fadd const1
-          fscale
-          fstp st(1)
-          fstp y
-    }
-  return(y);
-}
-#endif
-
 long intercept(real *x, real *v, MOLECULE *mol, CUTAWAY *cut)
 /* Find the first surface intersection with a particular vector, starting at
  *  a given starting point.
@@ -369,7 +310,7 @@ long intercept(real *x, real *v, MOLECULE *mol, CUTAWAY *cut)
  *                    is double (2 or -2) if the intersection occurs on the
  *                    shear plane of a cutaway.               12/12/93-DWM */
 {
-  long i, phase;
+  long phase;
   real mul=0, psi1=0, psi2, total, v2[3], x2[3], psi3, mul2;
 
   if (!to_sphere(x, v, mol->maxcheck, mol->zsize, mol->syscntr)) {
@@ -398,7 +339,7 @@ long intercept(real *x, real *v, MOLECULE *mol, CUTAWAY *cut)
         if (!cut_intercept(x, v2, cut)) {
           mol->lasthit = 0;
           return(0); }
-        total += sqrtl(sq(x[0]-x2[0])+sq(x[1]-x2[1])+sq(x[2]-x2[2]))/
+        total += sqrt(sq(x[0]-x2[0])+sq(x[1]-x2[1])+sq(x[2]-x2[2]))/
                  mol->zsize;
         if ((psi1=calc_prob_total(x, mol, &phase))<=mol->Psi)
           continue;
@@ -456,13 +397,13 @@ void oangtomat(double *r, double ta, double pa, double sa)
  *        double ta, pa, sa: theta, phi, and psi -- angles of rotation about
  *                          the z, x, and y axes, respectively.11/1/94-DWM */
 {
-  r[0] = sinl(pa)*sinl(sa)*sinl(ta)+cosl(sa)*cosl(ta);
-  r[1] = sinl(pa)*sinl(sa)*cosl(ta)-cosl(sa)*sinl(ta);
-  r[2] = cosl(pa)*sinl(sa);  r[3] = cosl(pa)*sinl(ta);
-  r[4] = cosl(pa)*cosl(ta);  r[5] = -sinl(pa);
-  r[6] = sinl(pa)*cosl(sa)*sinl(ta)-sinl(sa)*cosl(ta);
-  r[7] = sinl(pa)*cosl(sa)*cosl(ta)+sinl(sa)*sinl(ta);
-  r[8] = cosl(pa)*cosl(sa);
+  r[0] = sin(pa)*sin(sa)*sin(ta)+cos(sa)*cos(ta);
+  r[1] = sin(pa)*sin(sa)*cos(ta)-cos(sa)*sin(ta);
+  r[2] = cos(pa)*sin(sa);  r[3] = cos(pa)*sin(ta);
+  r[4] = cos(pa)*cos(ta);  r[5] = -sin(pa);
+  r[6] = sin(pa)*cos(sa)*sin(ta)-sin(sa)*cos(ta);
+  r[7] = sin(pa)*cos(sa)*cos(ta)+sin(sa)*sin(ta);
+  r[8] = cos(pa)*cos(sa);
 }
 
 long orb_asymptote(ASYMPTOTE *as, CUTAWAY *cut, MOLECULE *mol, float time,
@@ -505,7 +446,7 @@ long orb_asymptote(ASYMPTOTE *as, CUTAWAY *cut, MOLECULE *mol, float time,
                0,2,2,1,1,3,3,0,   0,1,2,1,3,1,-1,0,  1,0,0,3,3,2,2,1,
                1,0,0,2,2,3,3,1,   1,0,2,0,3,0,-1,0};
   OATOM *p;
-  real r, ph, th, ct, st, sum, index, di;
+  real r, ph, th, ct, st, sum, di;
   real xyz[24], psi2[8], psi;
   real pa, pb, pc, dist, xa[3], xb[3], xc[3];
   float *tempxyz;
@@ -568,12 +509,12 @@ long orb_asymptote(ASYMPTOTE *as, CUTAWAY *cut, MOLECULE *mol, float time,
             p->lrzna = r*p->zna;
             for (j=sum=0; j<=p->nml1; j++)
               sum += p->crs[j]*powr(p->lrzna, p->nml1-j);
-            as->rfac[i] = p->cc*powr(r, p->l)*expl(-p->lrzna)*sum; }
+            as->rfac[i] = p->cc*powr(r, p->l)*exp(-p->lrzna)*sum; }
           else
             as->rfac[i] = 0;
           th = PI*i/as->density;
           if (i==as->density)  th = PI;
-          st = sinl(th);  ct = cosl(th);
+          st = sin(th);  ct = cos(th);
           for (j=sum=0; j<=p->lmam/2 && ct; j++)
             sum += p->cts[j]*powr(ct, p->lmam-j-j);
           if (!ct && p->lmam<2)  sum = 1;
@@ -582,9 +523,9 @@ long orb_asymptote(ASYMPTOTE *as, CUTAWAY *cut, MOLECULE *mol, float time,
         for (i=0; i<=as->density*2; i++) {
           ph = 2*PI*i/(as->density*2);
           if (i==as->density*2)  ph = 0;
-          if (p->m>0)      as->pfac[i] = sqrt2*sinl(p->m*ph);
+          if (p->m>0)      as->pfac[i] = sqrt2*sin(p->m*ph);
           else if (!p->m)  as->pfac[i] = 1;
-          else             as->pfac[i] = sqrt2*cosl(p->m*ph); } }
+          else             as->pfac[i] = sqrt2*cos(p->m*ph); } }
       as->process = 3;
       if (time && clock()-cl>time*CLOCKS_PER_SEC)  return(0);
     case 3: if (!as->xyz)  as->xyz = malloc2(1);
@@ -605,9 +546,9 @@ long orb_asymptote(ASYMPTOTE *as, CUTAWAY *cut, MOLECULE *mol, float time,
             ph = 2*PI*(as->index[2]+k)/(as->density*2);
             if (as->index[1]+j==as->density)   th = PI;
             if (as->index[2]+k==as->density*2) ph = 0;
-            xyz[d*3]   = r*cosl(ph)*sinl(th)+mol->syscntr[0];
-            xyz[d*3+1] = r*sinl(ph)*sinl(th)+mol->syscntr[1];
-            xyz[d*3+2] = r*        cosl(th)+mol->syscntr[2];
+            xyz[d*3]   = r*cos(ph)*sin(th)+mol->syscntr[0];
+            xyz[d*3+1] = r*sin(ph)*sin(th)+mol->syscntr[1];
+            xyz[d*3+2] = r*        cos(th)+mol->syscntr[2];
             if (as->rfac) {
               psi = as->rfac[as->index[0]+i]*as->tfac[as->index[1]+j]*
                     as->pfac[as->index[2]+k];
@@ -646,7 +587,7 @@ long orb_asymptote(ASYMPTOTE *as, CUTAWAY *cut, MOLECULE *mol, float time,
               pa = psi2[b];  pb = psi2[a];
               memcpy(xa, xyz+b*3, 3*sizeof(real));
               memcpy(xb, xyz+a*3, 3*sizeof(real)); }
-            dist = sqrtl(sq(xa[0]-xb[0])+sq(xa[1]-xb[1])+sq(xa[2]-xb[2]));
+            dist = sqrt(sq(xa[0]-xb[0])+sq(xa[1]-xb[1])+sq(xa[2]-xb[2]));
             do {
               xc[0] = (xa[0]+xb[0])*0.5;
               xc[1] = (xa[1]+xb[1])*0.5;
@@ -667,7 +608,7 @@ long orb_asymptote(ASYMPTOTE *as, CUTAWAY *cut, MOLECULE *mol, float time,
                   sq(mol->maxcheck/as->density/4)) {
                 if (cut)
                   if (CutProximity<mol->maxcheck*0.001 &&
-                      sqrtl(di)>mol->minres*mol->zsize*2)
+                      sqrt(di)>mol->minres*mol->zsize*2)
                     continue;
                 pos[j] = k;  as->n--;  break; }
             if (j==2)
@@ -845,7 +786,7 @@ long orb_polygons(POLYGON *pl, CUTAWAY *cut, MOLECULE *mol, float time,
                0,2,2,1,1,3,3,0,   0,1,2,1,3,1,-1,0,  1,0,0,3,3,2,2,1,
                1,0,0,2,2,3,3,1,   1,0,2,0,3,0,-1,0};
   OATOM *p;
-  real r, ph, th, ct, st, sum, index, best, di;
+  real r, ph, th, ct, st, sum, best, di;
   real xyz[24], psi2[8], psi;
   real pa, pb, pc, dist, xa[3], xb[3], xc[3];
   float *tempxyz;
@@ -906,12 +847,12 @@ long orb_polygons(POLYGON *pl, CUTAWAY *cut, MOLECULE *mol, float time,
             p->lrzna = r*p->zna;
             for (j=sum=0; j<=p->nml1; j++)
               sum += p->crs[j]*powr(p->lrzna, p->nml1-j);
-            pl->rfac[i] = p->cc*powr(r, p->l)*expl(-p->lrzna)*sum; }
+            pl->rfac[i] = p->cc*powr(r, p->l)*exp(-p->lrzna)*sum; }
           else
             pl->rfac[i] = 0;
           th = PI*i/pl->density;
           if (i==pl->density)  th = PI;
-          st = sinl(th);  ct = cosl(th);
+          st = sin(th);  ct = cos(th);
           for (j=sum=0; j<=p->lmam/2 && ct; j++)
             sum += p->cts[j]*powr(ct, p->lmam-j-j);
           if (!ct && p->lmam<2)  sum = 1;
@@ -920,9 +861,9 @@ long orb_polygons(POLYGON *pl, CUTAWAY *cut, MOLECULE *mol, float time,
         for (i=0; i<=pl->density*2; i++) {
           ph = 2*PI*i/(pl->density*2);
           if (i==pl->density*2)  ph = 0;
-          if (p->m>0)      pl->pfac[i] = sqrt2*sinl(p->m*ph);
+          if (p->m>0)      pl->pfac[i] = sqrt2*sin(p->m*ph);
           else if (!p->m)  pl->pfac[i] = 1;
-          else             pl->pfac[i] = sqrt2*cosl(p->m*ph); } }
+          else             pl->pfac[i] = sqrt2*cos(p->m*ph); } }
       pl->process = 3;
       if (time && clock()-cl>time*CLOCKS_PER_SEC)  return(0);
     case 3: if (!pl->xyz)  pl->xyz = malloc2(1);
@@ -945,9 +886,9 @@ long orb_polygons(POLYGON *pl, CUTAWAY *cut, MOLECULE *mol, float time,
             ph = 2*PI*(pl->index[2]+k)/(pl->density*2);
             if (pl->index[1]+j==pl->density)   th = PI;
             if (pl->index[2]+k==pl->density*2) ph = 0;
-            xyz[d*3]   = r*cosl(ph)*sinl(th)+mol->syscntr[0];
-            xyz[d*3+1] = r*sinl(ph)*sinl(th)+mol->syscntr[1];
-            xyz[d*3+2] = r*        cosl(th)+mol->syscntr[2];
+            xyz[d*3]   = r*cos(ph)*sin(th)+mol->syscntr[0];
+            xyz[d*3+1] = r*sin(ph)*sin(th)+mol->syscntr[1];
+            xyz[d*3+2] = r*        cos(th)+mol->syscntr[2];
             if (pl->rfac) {
               psi = pl->rfac[pl->index[0]+i]*pl->tfac[pl->index[1]+j]*
                     pl->pfac[pl->index[2]+k];
@@ -998,7 +939,7 @@ long orb_polygons(POLYGON *pl, CUTAWAY *cut, MOLECULE *mol, float time,
                 pa = psi2[b];  pb = psi2[a];
                 memcpy(xa, xyz+b*3, 3*sizeof(real));
                 memcpy(xb, xyz+a*3, 3*sizeof(real)); }
-              dist = sqrtl(sq(xa[0]-xb[0])+sq(xa[1]-xb[1])+sq(xa[2]-xb[2]));
+              dist = sqrt(sq(xa[0]-xb[0])+sq(xa[1]-xb[1])+sq(xa[2]-xb[2]));
               do {
                 xc[0] = (xa[0]+xb[0])*0.5;
                 xc[1] = (xa[1]+xb[1])*0.5;
@@ -1022,7 +963,7 @@ long orb_polygons(POLYGON *pl, CUTAWAY *cut, MOLECULE *mol, float time,
                     sq(mol->maxcheck/pl->density/2)) {
                   if (cut)
                     if (CutProximity<mol->maxcheck*0.001 &&
-                        sqrtl(di)>mol->minres*mol->zsize*2)
+                        sqrt(di)>mol->minres*mol->zsize*2)
                       continue;
                   pos[j] = k;  pl->n--;  break; }
               if (j==2)
@@ -1081,7 +1022,7 @@ long orb_polygons(POLYGON *pl, CUTAWAY *cut, MOLECULE *mol, float time,
                                pl->xyz[pl->elem[(e1/3)*3+(e1+1)%3]*3+i])*0.5;
         pl->n++;
         snap_to_surface(pl->xyz+(pl->n-1)*3, mol, mol->Psi*pl->phase[e1/3],
-                        sqrtl(best)/2.2);
+                        sqrt(best)/2.2);
         pl->elem[pl->e*3] = pl->elem[e1];
         pl->elem[pl->e*3+1] = pl->n-1;
         pl->elem[pl->e*3+2] = pl->elem[(e1/3)*3+(e1+2)%3];
@@ -1445,8 +1386,8 @@ long orb_render_ray(RENDER *re, STEREO *st, CUTAWAY *cut, MOLECULE *mol,
  *                                                              1/3/98-DWM */
 {
   real x[3], v[3], c2[3], c3[3];
-  long camera=0, second=0, p1, p2, r, j, i;
-  double z, s, l, inter, H, V;
+  long camera=0, second=0, p1, p2, i;
+  double z, H, V;
 
   if (st) switch (st->mode) {
     case StereoSTEREOSCOPE: if (xx<re->w/2)  camera = 1;
@@ -1521,7 +1462,7 @@ long orb_render_ray(RENDER *re, STEREO *st, CUTAWAY *cut, MOLECULE *mol,
       switch (i) {
         case 0: clrout[0]=V;       clrout[1]=V*(1-H); clrout[2]=0; break;
         case 1: clrout[0]=V*H;     clrout[1]=V;       clrout[2]=0; break;
-        case 2: clrout[0]=0;       clrout[1]=V;     clrout[2]=V*(1-H); break;
+        case 2: clrout[0]=0;       clrout[1]=V;       clrout[2]=V*(1-H); break;
         case 3: clrout[0]=0;       clrout[1]=V*H;     clrout[2]=V; break;
         case 4: clrout[0]=V*(1-H); clrout[1]=0;       clrout[2]=V; break;
         case 5: clrout[0]=V;       clrout[1]=0;       clrout[2]=V*H; } } }
@@ -1544,8 +1485,8 @@ void orb_render_vector(double *c, double *cammat, real x, real y, real zsize,
  *                 location forward through the pixel.  It is of length
  *                 zsize.                                     11/24/97-DWM */
 {
-  real ct=cosl(c[7]), st=sinl(c[7]), cp=cosl(c[8]), sp=sinl(c[8]);
-  real cs=cosl(c[9]), ss=sinl(c[9]), den;
+  real ct=cos(c[7]), st=sin(c[7]), cp=cos(c[8]), sp=sin(c[8]);
+  real cs=cos(c[9]), ss=sin(c[9]), den;
 
   den = (c[4]*cp*(c[3]*cs+(c[5]-x)*ss)+c[3]*(y-c[6])*sp);
   if (!den)  den = 1;
@@ -1555,7 +1496,7 @@ void orb_render_vector(double *c, double *cammat, real x, real y, real zsize,
   v[1] = (cp*(c[3]*c[4]*c[1]*cs+c[4]*c[1]*(c[5]-x)*ss+c[3]*(c[2]-1)*(y-c[6])*
          ct)-sp*(c[3]*c[4]*(c[2]-1)*cs*ct+c[4]*(1-c[2])*(x-c[5])*ss*ct-c[3]*
          c[1]*(y-c[6]))+c[4]*(1-c[2])*st*((x-c[5])*cs+c[3]*ss))/den;
-  v[2] = zsize/sqrtl(v[0]*v[0]+v[1]*v[1]+1);
+  v[2] = zsize/sqrt(v[0]*v[0]+v[1]*v[1]+1);
   if (v[0]*cammat[6]+v[1]*cammat[7]+cammat[8]<0)
     v[2] *= -1;
   v[0] *= v[2];  v[1] *= v[2];
@@ -1566,7 +1507,7 @@ void orb_render_vector(double *c, double *cammat, real x, real y, real zsize,
 
 real pow1(long minusone, long pow)
 /* Raise -1 to an integer power.
- * Enter: long minusone: dummy to allow compatibility with powl().
+ * Enter: long minusone: dummy to allow compatibility with pow().
  *        long pow: power to raise -1 to.
  * Exit:  real result: -1^pow.                                 7/20/97-DWM */
 {
@@ -1632,7 +1573,7 @@ void prep_atom(OATOM *p, real factor)
   if (!ever) {
     for (i=1; i<MAXN*2; i++)
       fac[i] = i*fac[i-1];
-    snfac = sqrtl(nfac);
+    snfac = sqrt(nfac);
     ever = 1; }
   if (p->n<1)                p->n = 1;
   if (p->l>=p->n || p->l<0)  p->l = 0;
@@ -1658,7 +1599,7 @@ void prep_atom(OATOM *p, real factor)
   p->lmam = p->l - p->am;  p->lmam2 = p->lmam/2;  p->lmam12 = (p->lmam-1)/2;
   p->cc = factor * pow1(-1, (p->m+p->am+2)/2) * powr(p->Z, p->l+1) /
                                    (powr(p->n, p->l+2)*powr(a, p->l+1)) *
-          sqrtl(p->Z*fac[p->nml1]*fac[p->n+p->l]*fac[p->lmam]*(2*p->l+1) /
+          sqrt(p->Z*fac[p->nml1]*fac[p->n+p->l]*fac[p->lmam]*(2*p->l+1) /
                 (PI*a*fac[p->l+p->am])) * snfac;
   p->zna = p->Z/(p->n*a);
   for (j=0; j<=p->nml1; j++) {
@@ -1699,17 +1640,17 @@ void prep_check(MOLECULE *mol)
     for (j=0; j<3; j++)
       mol->syscntr[j] += orb[i].x[j]/mol->nump;
   for (i=0; i<mol->nump; i++) {
-    sep = sqrtl(sq(mol->syscntr[0]-orb[i].x[0])+
+    sep = sqrt(sq(mol->syscntr[0]-orb[i].x[0])+
                sq(mol->syscntr[1]-orb[i].x[1])+
                sq(mol->syscntr[2]-orb[i].x[2]));
     ph = sqrt2*orb[i].cc;
     if (!orb[i].m)  ph = orb[i].cc;
     for (th=psi=0; th<PI2; th+=0.0001) {
-      ct = cosl(th);
+      ct = cos(th);
       for (j=sum=0; j<=orb[i].lmam/2 && ct; j++)
         sum += orb[i].cts[j]*powr(ct, orb[i].lmam-j-j);
       if (!ct && orb[i].lmam<2)  sum = 1;
-      if (st=sinl(th))  orb[i].ltf = powr(st, orb[i].am)*sum;
+      if (st=sin(th))  orb[i].ltf = powr(st, orb[i].am)*sum;
       else              orb[i].ltf = (!orb[i].m)*sum;
       if (fabs(orb[i].ltf)>psi)   psi = fabs(orb[i].ltf); }
     ph = fabs(ph*psi);
@@ -1721,8 +1662,8 @@ void prep_check(MOLECULE *mol)
         sum += orb[i].crs[j]*powr(r*orb[i].zna, orb[i].nml1-j);
         if (r>orb[i].maxr)
           bad = 10000; }
-      psi = powr(r, orb[i].l)*expl(-r*orb[i].zna)*sum*ph;
-      if (fabsl(psi)<(LDBL_MIN*1e6)) {
+      psi = powr(r, orb[i].l)*exp(-r*orb[i].zna)*sum*ph;
+      if (fabs(psi)<(LDBL_MIN*1e6)) {
         psi = 0;  bad += 2*orb[i].n; }
       psi *= psi;
       if (psi>mol->Psi/sq(mol->nump) && bad<9999) {
@@ -1737,8 +1678,8 @@ void prep_check(MOLECULE *mol)
         z += 100*orb[i].n; }
     if (sep+max*a0>mol->maxcheck)
       mol->maxcheck = sep+max*a0;
-    if (sqrtl(max)*0.250<mol->maxjump)
-      mol->maxjump = sqrtl(max)*0.250; }
+    if (sqrt(max)*0.250<mol->maxjump)
+      mol->maxjump = sqrt(max)*0.250; }
   mol->maxjump = mol->maxjump*mol->EffScale/(mol->nump*mol->maxjumpadj)/2;
   mol->maxcheck2 = sq(mol->maxcheck);
   mol->zsize = 10*a0 * 11.25/17.5/mol->EffScale/2;
@@ -1766,7 +1707,7 @@ long quickint(real *x, real *v, MOLECULE *mol, CUTAWAY *cut, real *y)
   newv[0] = y[0]-point[0];
   newv[1] = y[1]-point[1];
   newv[2] = y[2]-point[2];
-  newvl = sqrtl(newv[0]*newv[0]+newv[1]*newv[1]+newv[2]*newv[2]);
+  newvl = sqrt(newv[0]*newv[0]+newv[1]*newv[1]+newv[2]*newv[2]);
   dist = newvl/mol->zsize;
   newv[0] /= dist;  newv[1] /= dist;  newv[2] /= dist;
   psi1 = 0;
@@ -1784,7 +1725,7 @@ long quickint(real *x, real *v, MOLECULE *mol, CUTAWAY *cut, real *y)
           return(0);
         if ((psi1=calc_prob_total(point, mol, &phase))<=mol->Psi) {
           mul = res;
-          dist -= sqrtl(sq(last[0]-y[0])+sq(last[1]-y[1])+sq(last[2]-y[2]));
+          dist -= sqrt(sq(last[0]-y[0])+sq(last[1]-y[1])+sq(last[2]-y[2]));
           continue; } }
       return(1); }
     if (mol->nump==1) {
@@ -1829,7 +1770,7 @@ long ray(real *x, real *v, real *colorin, MOLECULE *mol, CUTAWAY *cut,
  *                                                            12/12/93-DWM */
 {
   long i, lastphase;
-  real mag, g[3], magt=0, spc=0, l[3], lv[3], cs;
+  real mag, g[3], magt=0, spc=0, l[3];
   LIGHT *ls=mol->ls;
 
   lastphase = intercept(x, v, mol, cut);
@@ -1868,10 +1809,6 @@ long ray(real *x, real *v, real *colorin, MOLECULE *mol, CUTAWAY *cut,
   for (i=0; i<mol->nump; i++)
     if (mol->orb[i].m)
       lastphase += 2048*(long)((mol->orb[i].lp+PI)*mol->orb[i].am/PI);
-if (0)
-{ long steps=7, min=1; double dither=0; //
-magt = (floor(magt*(steps-1+min)+0.5+(((float)rand()/RAND_MAX)-0.5)*dither))/(steps-1+min); //
-if (magt>1)  magt = 1;  if (magt<1./(steps-1+min))  magt = 1./(steps-1+min); } //
   colorout[0] *= magt;  colorout[1] *= magt;  colorout[2] *= magt;
   return(lastphase);
 }
@@ -1894,8 +1831,8 @@ real ray_opacity(real *x, real *v, long steps, RENDER *re, MOLECULE *mol,
 {
   long i=0, phase1, phase2;
   real opac=1, o, o2, o3, oa;
-  real psi1, psi2, v2[3], mag, magt, maga, magat, gr[3], gra[3];
-  real x2[3], v3[3];
+  real psi1, psi2, v2[3], gr[3], gra[3];
+  real v3[3];
 
   memcpy(v3, v, 3*sizeof(real));
   if (!to_sphere(x, v3, mol->maxcheck, mol->zsize, mol->syscntr))
@@ -1936,7 +1873,7 @@ real ray_opacity(real *x, real *v, long steps, RENDER *re, MOLECULE *mol,
         memcpy(gra, gr, 3*sizeof(real));
         calc_unit(v2);  calc_unit(gra);
         oa = fabs(v2[0]*gra[0]+v2[1]*gra[1]+v2[2]*gra[2]);
-        if (oa)  oa = 1-(powl(1-re->opacity[6], 1./oa));
+        if (oa)  oa = 1-(pow(1-re->opacity[6], 1./oa));
         else     oa = 1;
         oa = (1-o-o2-o3)*oa; }
       opac = (1-(o+o2+o3+oa))*opac; } }
@@ -2042,7 +1979,7 @@ long ray_precise(real *x, real *v, real *colorin, RENDER *re, MOLECULE *mol,
           memcpy(gra, gr, 3*sizeof(real));
           calc_unit(v2);  calc_unit(gra);
           oa = fabs(v2[0]*gra[0]+v2[1]*gra[1]+v2[2]*gra[2]);
-          if (oa)  oa = 1-(powl(1-re->opacity[6], 1./oa));
+          if (oa)  oa = 1-(pow(1-re->opacity[6], 1./oa));
           else     oa = 1;
           oa = (1-o-o2-o3)*oa; }
         if (abs(phase1)>=2 || abs(phase2)>=2) {
@@ -2068,7 +2005,7 @@ long ray_precise(real *x, real *v, real *colorin, RENDER *re, MOLECULE *mol,
             v2[0] = ls[i].lx[0]-x2[0];
             v2[1] = ls[i].lx[1]-x2[1];
             v2[2] = ls[i].lx[2]-x2[2];
-            shadow = sqrtl(sq(v2[0])+sq(v2[1])+sq(v2[2]))/
+            shadow = sqrt(sq(v2[0])+sq(v2[1])+sq(v2[2]))/
                      (mol->maxcheck/re->steps);
             if (shadow>re->steps*2)  shadow = re->steps*2;
             calc_unit(v2);
@@ -2093,7 +2030,7 @@ long ray_precise(real *x, real *v, real *colorin, RENDER *re, MOLECULE *mol,
               st2 = v3[0]*v2[0]+v3[1]*v2[1]+v3[2]*v2[2];
               ct2 = -(v3[0]*gr[0]+v3[1]*gr[1]+v3[2]*gr[2]); }
             else {
-              ct2 = cosl(asin(st2));
+              ct2 = cos(asin(st2));
               if (ct2*(v3[0]*gr[0]+v3[1]*gr[1]+v3[2]*gr[2])<0)  ct2 *= -1; }
             v[0] = (st2*v2[0]+ct2*gr[0])*mol->maxcheck/re->steps;
             v[1] = (st2*v2[1]+ct2*gr[1])*mol->maxcheck/re->steps;
@@ -2148,21 +2085,6 @@ real rnd(real low, real high, long inc)
     default: return(r/s*(high-low)+low); }
 }
 
-#ifndef ANSIC
-double sinl(double x)
-/* Mimic the c function sin.
- * Enter: double x: initial value.
- * Exit:  double sinx: sin(x).                                  1/4/94-DWM */
-{
-  _asm {
-          fld x
-          fsin
-          fstp x
-    }
-  return(x);
-}
-#endif
-
 void snap_to_surface(float *xyz, MOLECULE *mol, real psi2, real uncertain)
 /* Adjust a point so that it lies on the surface of the part.
  * Enter: float *xyz: point to modify.  This must be "close" to the
@@ -2195,21 +2117,6 @@ void snap_to_surface(float *xyz, MOLECULE *mol, real psi2, real uncertain)
   xyz[0] = x[0];  xyz[1] = x[1];  xyz[2] = x[2];
 }
 
-#ifndef ANSIC
-double sqrtl(double x)
-/* Mimic the c function sqrt.
- * Enter: double x: initial value.
- * Exit:  double sqrtx: sqrt(x).                                1/4/94-DWM */
-{
-  _asm {
-          fld x
-          fsqrt
-          fstp x
-    }
-  return(x);
-}
-#endif
-
 real to_jump(void)
 /* Pass back the distance moved in the to_sphere() routine.
  * Exit:  real dist: actual distance moved.                    1/22/95-DWM */
@@ -2228,7 +2135,7 @@ long to_sphere(real *x, real *v, real radius, real siz, real *cntr)
  *        real *cntr: sphere center.
  * Exit:  long hit: 0 for missed, 1 for within critical radius.  1/5/94-DWM */
 {
-  real p[3], temp[3], min, cost, curr;
+  real p[3], min, cost, curr;
 
   calc_unit(v);
   p[0] = cntr[0]-x[0];  p[1] = cntr[1]-x[1];  p[2] = cntr[2]-x[2];
@@ -2237,7 +2144,7 @@ long to_sphere(real *x, real *v, real radius, real siz, real *cntr)
   curr = radius*radius+(cost*cost-min);
   if (curr<0)
     return(0);
-  curr = cost - sqrtl(curr);
+  curr = cost - sqrt(curr);
   if (curr<0) {
     ToJump = 0;
     v[0] *= siz;        v[1] *= siz;          v[2] *= siz;
@@ -2258,8 +2165,8 @@ real *transform(real *x, real *t, real *a, real mag)
  *                  negative).
  * Exit:  real *t: transformed coordinates.                   12/11/93-DWM */
 {
-  real ca=cosl(a[0]*mag), cb=cosl(a[1]*mag), cg=cosl(a[2]*mag);
-  real sa=sinl(a[0]*mag), sb=sinl(a[1]*mag), sg=sinl(a[2]*mag);
+  real ca=cos(a[0]*mag), cb=cos(a[1]*mag), cg=cos(a[2]*mag);
+  real sa=sin(a[0]*mag), sb=sin(a[1]*mag), sg=sin(a[2]*mag);
   real tx, ty, tz;
 
   if (mag<0) {

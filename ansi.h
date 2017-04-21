@@ -14,7 +14,7 @@
 #define NEGCOLOR        2
 #define ASYMCOLOR       3
 #define PREVIEWCOLOR    4
-#define NUMCOLORS       5
+#define NUMPREFCOLORS   5
 
 #define sq(x)  ((x)*(x))
 
@@ -27,7 +27,7 @@
 typedef struct PREF {
   long flags;
   float perspec;
-  long colors[NUMCOLORS]; } PREF;
+  long colors[NUMPREFCOLORS]; } PREF;
 typedef struct DATA {
   long dflag;                         /* see comments after structure list */
   char name[ONENAMELEN];
@@ -84,7 +84,7 @@ void   render_dlt_new (long numnode, float *node, long w, long h,
 void   render_move    (float *dx, float *dang, float *dx0, long w, long h,
                        double *renderval, double *initdlt, double *findlt);
 void   render_physical(double *val, double *dlt, double *phys, lmatrix *ang);
-long   save_ppm       (DATA *data, FILE *fptr);
+int    save_ppm       (DATA *data, FILE *fptr);
 long   save_vrml      (DATA *data);
 void   save_vrml_color(FILE *fptr, char *text, long clr);
 void   update_geo     (DATA *data);

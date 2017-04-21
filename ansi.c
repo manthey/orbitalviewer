@@ -1,5 +1,5 @@
-/* This contains fully ANSI compatible command line parameter access to the
-/*  orbital routines.                                          11/9/97-DWM */
+/* This contains fully ANSI-compatible command line parameter access to the
+ *  orbital routines.                                          11/9/97-DWM */
 
 #include <math.h>
 #include <stdio.h>
@@ -135,19 +135,16 @@ void *realloc2(void *memblock, size_t size)
   return(realloc(memblock, size));
 }
 
-long save_ppm(DATA *data, FILE *fptr)
+int save_ppm(DATA *data, FILE *fptr)
 /* Write an ascii P3 style PPM file.
  * Enter: DATA *data: pointer to rendered data.
  *        FILE *fptr: pointer to open file.  The file is not closed.
- * Exit:  long failed: 0 for okay, 1 for failed.               1/18/97-DWM */
+ * Exit:  int failed: 0 for okay, 1 for failed.                1/18/97-DWM */
 {
-  long i;
-
   if (data->render.w<=0 || data->render.h<=0 || !data->render.buf)
     return(1);
-  fprintf(fptr, "P3 %d %d 255\n", data->render.w, data->render.h);
-  for (i=0; i<data->render.w*data->render.h*3; i++)
-    fprintf(fptr, "%d ", data->render.buf[i]);
+  fprintf(fptr, "P6 %d %d 255\n", data->render.w, data->render.h);
+  fwrite(data->render.buf, 1, data->render.w*data->render.h*3, fptr);
   return(0);
 }
 

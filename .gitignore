@@ -3,3 +3,4 @@
 *.lib
 *.exe
 *.ini
+data.h

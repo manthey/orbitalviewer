@@ -162,7 +162,7 @@ BOOL CALLBACK color_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   DATA *data=0, *data3;
   static DATA data2;
   char text[80];
-  long *clr, box[]={80,6,64,18, 24}, out[4], i, j, k, c, c2, old[NUMCOLORS];
+  long *clr, box[]={80,6,64,18, 24}, out[4], i, j, k, c, c2, old[NUMPREFCOLORS];
   RECT rect;
   PAINTSTRUCT paint;
   HDC hdc;
@@ -186,9 +186,9 @@ BOOL CALLBACK color_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
           rect.left = out[0]-2;   rect.top = out[1]-2;
           rect.right = out[2]+out[0]+2;  rect.bottom = out[3]+out[1]+2;
           InvalidateRect(hdlg, &rect, 1); } break;
-      case ColorReset: memset(data2.pref.colors, -1, NUMCOLORS*sizeof(long));
+      case ColorReset: memset(data2.pref.colors, -1, NUMPREFCOLORS*sizeof(long));
         map_dialog_rect(hdlg, box[0], box[1], box[0]+box[2],
-                        box[1]+box[3]+(box[4]*NUMCOLORS-1), out);
+                        box[1]+box[3]+(box[4]*NUMPREFCOLORS-1), out);
         rect.left = out[0]-2;   rect.top = out[1]-2;
         rect.right = out[2]+2;  rect.bottom = out[3]+2;
         InvalidateRect(hdlg, &rect, 1); break;
@@ -202,16 +202,16 @@ BOOL CALLBACK color_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
           Pref.flags |= (1<<6);
         if (SendDlgItemMessage(hdlg,ColorPref,BM_GETCHECK,0,0))
           Pref.flags |= (1<<7);
-        memcpy(old, clr, NUMCOLORS*sizeof(long));
-        if (memcmp(old, data2.pref.colors, NUMCOLORS*sizeof(long))) {
+        memcpy(old, clr, NUMPREFCOLORS*sizeof(long));
+        if (memcmp(old, data2.pref.colors, NUMPREFCOLORS*sizeof(long))) {
           if ((Pref.flags>>7)&1)
-            for (i=0; i<NUMCOLORS; i++)
+            for (i=0; i<NUMPREFCOLORS; i++)
               if (old[i]!=data2.pref.colors[i])
                 Pref.colors[i] = data2.pref.colors[i];
           if ((Pref.flags>>6)&1)
             for (i=0; i<NumWindows; i++) {
               data3 = lock_window(HwndList[i]);
-              for (j=0; j<NUMCOLORS; j++)
+              for (j=0; j<NUMPREFCOLORS; j++)
                 if (old[j]!=data2.pref.colors[j])
                   data3->pref.colors[j] = data2.pref.colors[j];
               out[0] = get_color(data3, POSCOLOR);
@@ -223,7 +223,7 @@ BOOL CALLBACK color_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
               update_process(data3);
               unlock_window(data3);
               InvalidateRect(HwndList[i], 0, 0); }
-          memcpy(clr, data2.pref.colors, NUMCOLORS*sizeof(long));
+          memcpy(clr, data2.pref.colors, NUMPREFCOLORS*sizeof(long));
           out[0] = get_color(data, POSCOLOR);
           out[1] = get_color(data, NEGCOLOR);
           out[2] = get_color(data, BACKCOLOR);
@@ -239,11 +239,11 @@ BOOL CALLBACK color_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
         if (data=lock_window(hwnd))
           clr = data->pref.colors;
       memset(&data2, 0, sizeof(DATA));
-      memcpy(data2.pref.colors, clr, NUMCOLORS*sizeof(long));
+      memcpy(data2.pref.colors, clr, NUMPREFCOLORS*sizeof(long));
       SendDlgItemMessage(hdlg, ColorAll, BM_SETCHECK, (Pref.flags>>6)&1, 0);
       SendDlgItemMessage(hdlg, ColorPref, BM_SETCHECK, (Pref.flags>>7)&1, 0);
       map_dialog_rect(hdlg, box[0], box[1], box[0]+box[2],
-                      box[1]+box[3]+(box[4]*NUMCOLORS-1), out);
+                      box[1]+box[3]+(box[4]*NUMPREFCOLORS-1), out);
       rect.left = out[0]-2;   rect.top = out[1]-2;
       rect.right = out[2]+2;  rect.bottom = out[3]+2;
       InvalidateRect(hdlg, &rect, 1);
@@ -251,7 +251,7 @@ BOOL CALLBACK color_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
       SetFocus(hdlg);
       return(1);
     case WM_PAINT: hdc = BeginPaint(hdlg, &paint);
-      for (i=0; i<NUMCOLORS; i++) {
+      for (i=0; i<NUMPREFCOLORS; i++) {
         map_dialog_rect(hdlg, box[0], box[1]+box[4]*i, box[2], box[3], out);
         c2 = get_color(&data2, i);
         c = (c2>>16)+(c2&0xFF00)+((c2&0xFF)<<16);
@@ -1109,7 +1109,7 @@ read_ini()
       case 10: sscanf(text, "%g", &Pref.perspec); break;
       case 11: if (!strlen(text)) break;
         t2 = text;
-        for (j=0; j<16 && j<NUMCOLORS && t2; j++) {
+        for (j=0; j<16 && j<NUMPREFCOLORS && t2; j++) {
           sscanf(t2, "%X", Pref.colors+j);
           if (strchr(t2, ','))  t2 = strchr(t2, ',')+1;
           else                  t2 = 0; } break;
@@ -1149,7 +1149,7 @@ read_ini_defaults()
   Pref.perspec = 25;
   Pref.pointsize = 0;
   Pref.radstep = 30*deg;  Pref.panstep = 0.15;  Pref.zoomstep = 0.5;
-  for (i=0; i<NUMCOLORS; i++)
+  for (i=0; i<NUMPREFCOLORS; i++)
     Pref.colors[i] = -1;
 }
 
@@ -2184,7 +2184,7 @@ write_ini()
       case 9: text = t2;  sprintf(t2, "%d", Pref.flags); break;
       case 10: text = t2;  sprintf(t2, "%g", Pref.perspec); break;
       case 11: text = t2;  t2[0] = 0;
-        for (j=0; j<16 && j<NUMCOLORS; j++)
+        for (j=0; j<16 && j<NUMPREFCOLORS; j++)
           sprintf(t2+strlen(t2), "%06X,", Pref.colors[j]);
         t2[strlen(t2)-1] = 0; break;
       case 12: text = lastview;     break;

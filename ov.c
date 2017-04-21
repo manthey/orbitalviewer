@@ -2535,7 +2535,7 @@ test(char *data)
   fclose(fptr);
   return(0); /**/
 /**  SetWindowText(Hwnd, data); /**/
- **  debug(data);  /**/
+/**  debug(data);  /**/
 }
 
 VOID CALLBACK timer(HWND hwnd, ulong msg, ulong id, long time)
@@ -2846,7 +2846,7 @@ APIENTRY WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR argv, long winmode)
   wcl.lpszClassName = WinName2;
   wcl.lpfnWndProc = second_loop;
   wcl.lpszMenuName = wcl.cbClsExtra = wcl.cbWndExtra = 0;
-  wcl.hbrBackground = 0;
+  wcl.hbrBackground = GetStockObject(BLACK_BRUSH);
   if (!RegisterClass(&wcl))
     return(0);
   setup();
