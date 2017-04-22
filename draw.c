@@ -17,17 +17,19 @@
 #include "ovrc.h"
 #include "ov.h"
 
+char *DispInfo[]={"Use mouse to rotate/pan/zoom."};
+long LastMove=0;
+uchar *ColorTable;
+
 long CutZ, Dither=1, dithernum=-1, dither16num=-1, dithertbl2[900], Down=0,
-     DownX, DownY, LastMove=0, opacitytbl[OPACDITHER], OpacPos=0;
+     DownX, DownY, opacitytbl[OPACDITHER], OpacPos=0;
 long CameraCoor[]={76,4,100,100}, CutawayCoor[]={76,4,100,100},
      LightCoor[]={96,34,100,100};
-char *DispInfo[]={"Use mouse to rotate/pan/zoom."};
-char *DispMode[]={"Render Mode"};
-uchar *ColorTable, dither16tbl[2048], MasterPal[768];
+uchar dither16tbl[2048], MasterPal[768];
 uchar imask[] = {0x80, 0x40, 0x20, 0x10, 8, 4, 2, 1};
 uchar dithertbl1[2048], dithertbl3[]={0,0,1,2,3,4,5,6,7,8,9,10,12,14,16,18};
 
-bgr_to_rgb(uchar *image, long siz)
+void bgr_to_rgb(uchar *image, long siz)
 /* Convert a packed array of BGR values to RGB values.
  * Enter: uchar *image: pointer to array to convert.
  *        long size: number of values to convert.  Each value is 3 bytes.
@@ -44,7 +46,7 @@ bgrrgb1:  mov al, [esi]
     }
 }
 
-camera_figure(HWND hdlg, HDC hdc, DATA *data, double *phys)
+void camera_figure(HWND hdlg, HDC hdc, DATA *data, double *phys)
 /* Create the figure showing the current state of the camera.
  * Enter: HWND hdlg: handle to dialog to work with.
  *        HDC hdc: device context handle to draw with.
@@ -54,9 +56,8 @@ camera_figure(HWND hdlg, HDC hdc, DATA *data, double *phys)
 {
   long w, h, backclr, *lpic, s, i, j, x, y;
   RECT rect;
-  HBITMAP wpic, wpic2;
+  HBITMAP wpic;
   uchar *pic2;
-  LOGPALETTE *lpal;
   long tim=clock();
   static long init=0;
   double fac;
@@ -88,7 +89,7 @@ camera_figure(HWND hdlg, HDC hdc, DATA *data, double *phys)
   w = rect.right-rect.left;  h = rect.bottom-rect.top;
   s = ((w*3+3)/4)*4;
   wpic = GlobalAlloc(GMEM_MOVEABLE, s*h+40);
-  if (!wpic)  return(0);
+  if (!wpic)  return;
   pic2 = GlobalLock(wpic);  lpic = (long *)pic2;
   lpic[0] = 40;  lpic[1] = w;  lpic[2] = h;
   ((short *)pic2)[6] = 1;  ((short *)pic2)[7] = 24;
@@ -109,8 +110,8 @@ camera_figure(HWND hdlg, HDC hdc, DATA *data, double *phys)
   else               PreviewDelay = 1000;
 }
 
-camera_figure_draw(long w, long h, long scan, uchar *buf, DATA *data,
-                   double *phys)
+void camera_figure_draw(long w, long h, long scan, uchar *buf, DATA *data,
+                        double *phys)
 /* Draw the camera figure to a buffer.
  * Enter: long w, h: size of figure to draw.
  *        long scan: bytes per scan line.
@@ -128,7 +129,7 @@ camera_figure_draw(long w, long h, long scan, uchar *buf, DATA *data,
   double mc[9], den, minz=1e30, maxz=-1e30, cz, x, y, z;
   lmatrix m;
 
-  if (!(zbuf=malloc2(w*h*sizeof(short))))  return(0);
+  if (!(zbuf=malloc2(w*h*sizeof(short))))  return;
   memset(zbuf, 0xFFFF, w*h*sizeof(short));
   fz = (float *)sz;
   memcpy(temp, phys, 10*sizeof(double));
@@ -180,8 +181,8 @@ camera_figure_draw(long w, long h, long scan, uchar *buf, DATA *data,
   free2(zbuf);
 }
 
-camera_move(HWND hdlg, long delx, long dely, long w, long h, long down,
-            DATA *data, long ptr)
+long camera_move(HWND hdlg, long delx, long dely, long w, long h, long down,
+                 DATA *data, long ptr)
 /* Actually move the camera image, modifying the phys array.
  * Enter: HWND hdlg: handle of current dialog.
  *        long delx, dely: amount of mouse movement.
@@ -221,7 +222,7 @@ camera_move(HWND hdlg, long delx, long dely, long w, long h, long down,
   return(mod);
 }
 
-camera_rect(RECT *rect, HWND hdlg)
+void camera_rect(RECT *rect, HWND hdlg)
 /* Locate the rectangle used in a camera preview.
  * Enter: RECT *rect: pointer to store result.  If null, the rectangle is
  *                    invalidated (refreshed).
@@ -240,7 +241,7 @@ camera_rect(RECT *rect, HWND hdlg)
     InvalidateRect(hdlg, rect, 0);
 }
 
-cutaway_figure(HWND hdlg, HDC hdc, real *pos, long type)
+void cutaway_figure(HWND hdlg, HDC hdc, real *pos, long type)
 /* Create the figure showing the current state of the cutaway.
  * Enter: HWND hdlg: handle to dialog to work with.
  *        HDC hdc: device context handle to draw with.
@@ -248,11 +249,10 @@ cutaway_figure(HWND hdlg, HDC hdc, real *pos, long type)
  *                   specifying cutaway.
  *        long type: 0-none, 1-plane, 2-corner, 3-wedge.       7/26/97-DWM */
 {
-  long w, h, backclr, *lpic, s, i, lastpart=8;
+  long w, h, backclr, *lpic, s, lastpart=8;
   RECT rect;
-  HBITMAP wpic, wpic2;
+  HBITMAP wpic;
   uchar *pic2;
-  LOGPALETTE *lpal;
   long tim=clock();
 
   cutaway_rect(&rect, hdlg);
@@ -261,7 +261,7 @@ cutaway_figure(HWND hdlg, HDC hdc, real *pos, long type)
   backclr = GetSysColor(COLOR_BTNFACE);
   s = ((w*3+3)/4)*4;
   wpic = GlobalAlloc(GMEM_MOVEABLE, s*h+40);
-  if (!wpic)  return(0);
+  if (!wpic)  return;
   pic2 = GlobalLock(wpic);  lpic = (long *)pic2;
   lpic[0] = 40;  lpic[1] = w;  lpic[2] = h;
   ((short *)pic2)[6] = 1;  ((short *)pic2)[7] = 24;
@@ -279,8 +279,8 @@ cutaway_figure(HWND hdlg, HDC hdc, real *pos, long type)
   else               PreviewDelay = 1000;
 }
 
-cutaway_figure_draw(long w, long h, long scan, uchar *buf, real *pos,
-                    long type, long color)
+void cutaway_figure_draw(long w, long h, long scan, uchar *buf, real *pos,
+                         long type, long color)
 /* Draw the cutaway figure to a buffer.
  * Enter: long w, h: size of figure to draw.
  *        long scan: bytes per scan line.
@@ -346,8 +346,8 @@ cutaway_figure_draw(long w, long h, long scan, uchar *buf, real *pos,
           buf[d+2] = (total[2]+2)/4; } } } }
 }
 
-cutaway_figure_point(real *x, real *v, real *pos, long color, DATA *data,
-                     uchar *dest)
+void cutaway_figure_point(real *x, real *v, real *pos, long color, DATA *data,
+                          uchar *dest)
 /* Calculate the color of the cutaway along a specific ray.
  * Enter: real *x: starting point of ray.
  *        real *v: direction vector of ray.
@@ -357,13 +357,13 @@ cutaway_figure_point(real *x, real *v, real *pos, long color, DATA *data,
  *        DATA *data: memory area containing cutaway info.
  *        uchar *dest: location to store color.                8/22/97-DWM */
 {
-  long i, j, k, l, d, num, num2, clr;
-  real inter[30], x2[3], v2[3], inter2[30], cost, acost, mul;
+  long k, l, num, num2, clr;
+  real inter[30], x2[3], v2[3], inter2[30], cost, acost;
   real r, g, b, r2, g2, b2, o;
   float oo=0.7, rr, gg, bb, amb=0.6;  /* opacity, color, ambient */
 
   if ((num=cutaway_inter(x, v, pos, data, inter))<1) {
-    dest[0] = color&0xFF;  ((ushort *)(dest+1))[0] = color>>8;  return(0); }
+    dest[0] = color&0xFF;  ((ushort *)(dest+1))[0] = color>>8;  return; }
   clr = get_color(data, PREVIEWCOLOR);
   rr = (float)(clr>>16)/255;
   gg = (float)((clr>>8)&0xFF)/255;
@@ -388,7 +388,7 @@ cutaway_figure_point(real *x, real *v, real *pos, long color, DATA *data,
   dest[0] = 255*b;  dest[1] = 255*g;  dest[2] = 255*r;
 }
 
-cutaway_inter(real *x, real *v, real *pos, DATA *data, real *inter)
+long cutaway_inter(real *x, real *v, real *pos, DATA *data, real *inter)
 /* Calculate the intercepts anf surface normals along a sphere with a cutout.
  *  The intersection may not be at the starting point.
  * Enter: real *x: starting point of ray to use for intersection.
@@ -466,8 +466,8 @@ cutaway_inter(real *x, real *v, real *pos, DATA *data, real *inter)
   return(num);
 }
 
-cutaway_move(HWND hdlg, long delx, long dely, long w, long h, long down,
-             DATA *data, real *pos)
+long cutaway_move(HWND hdlg, long delx, long dely, long w, long h, long down,
+                  DATA *data, real *pos)
 /* Actually move the cutaway, updating the dialog elements..
  * Enter: HWND hdlg: handle of current dialog.
  *        long delx, dely: amount of mouse movement.
@@ -480,7 +480,7 @@ cutaway_move(HWND hdlg, long delx, long dely, long w, long h, long down,
  *                                                              1/7/98-DWM */
 {
   long i, ru, du;
-  double m[27], ang, ang1[3], pos1[3], pos2[3], x;
+  double m[27], ang, ang1[3], pos1[3], pos2[3];
   lmatrix r, dr, rp;
   char mv[]={4,8,5,7, 8,0,6,2};
   char text[80], text2[80];
@@ -538,7 +538,7 @@ cutaway_move(HWND hdlg, long delx, long dely, long w, long h, long down,
   return(0);
 }
 
-cutaway_rect(RECT *rect, HWND hdlg)
+void cutaway_rect(RECT *rect, HWND hdlg)
 /* Locate the rectangle used in a cutaway preview.
  * Enter: RECT *rect: pointer to store result.  If null, the rectangle is
  *                    invalidated (refreshed).
@@ -557,7 +557,7 @@ cutaway_rect(RECT *rect, HWND hdlg)
     InvalidateRect(hdlg, rect, 0);
 }
 
-draw_bmp(HDC hdc, long x, long y, HANDLE bmp)
+void draw_bmp(HDC hdc, long x, long y, HANDLE bmp)
 /* Draw a BMP format graphic.
  * Enter: HDC hdc: Windows style pointer to a window.
  *        long x, y: location to draw BMP.
@@ -577,7 +577,7 @@ draw_bmp(HDC hdc, long x, long y, HANDLE bmp)
   GlobalUnlock(bmp);
 }
 
-draw_bmp2(HDC hdc, long x, long y, uchar *bmp)
+void draw_bmp2(HDC hdc, long x, long y, uchar *bmp)
 /* Draw a BMP format graphic.
  * Enter: HDC hdc: Windows style pointer to a window.
  *        long x, y: location to draw BMP.
@@ -587,7 +587,7 @@ draw_bmp2(HDC hdc, long x, long y, uchar *bmp)
   LPSTR buf;
   long w, h, pal;
 
-  header = bmp;
+  header = (LPBITMAPINFOHEADER)bmp;
   w = header->biWidth;  h = header->biHeight;
   pal = header->biBitCount;
   if (pal<=8)  pal = (1<<pal);  else pal = 0;
@@ -596,17 +596,17 @@ draw_bmp2(HDC hdc, long x, long y, uchar *bmp)
                     DIB_RGB_COLORS);
 }
 
-fill_norm(DATA *data)
+void fill_norm(DATA *data)
 /* Fill the arrays which contain the surface normals.  These are actual
  *  surface normals, not screen surface normals.
  * Enter: DATA *data: pointer to window's data area.          12/29/97-DWM */
 {
   float *node, **normptr, **enormptr, *norm, *enorm;
-  double x, y, z, V1[3], V2[3], V3[3];
+  double V1[3], V2[3], V3[3];
   long i, j, *elem, num, n, e, mode;
 
   mode = (data->dflag>>7)&3;
-  if (mode==2 || (!mode && !data->asym.opacity))  return(0);
+  if (mode==2 || (!mode && !data->asym.opacity))  return;
   for (i=0; i<2; i++) {
     if (!i) {
       if (!mode)  continue;
@@ -651,7 +651,7 @@ fill_norm(DATA *data)
       norm[i*3+2] /= num; } }
 }
 
-fill_zone24(uchar *dest, long bclr, long count)
+void fill_zone24(uchar *dest, long bclr, long count)
 /* Fill a memory area with a 24-bit value.  This is useful for "erasing" a
  *  memory array to a non-grey color.
  * Enter: char *dest: location to store results.
@@ -672,7 +672,7 @@ fill1:    mov es:[edi], bx
     }
 }
 
-focal_geo(long axis, float jump)
+void focal_geo(long axis, float jump)
 /* Shift the camera's internal parameters for the geometry associated with
  *  the top window.
  * Enter: long axis: 0-x0, 1-y0, 2-f.
@@ -683,12 +683,12 @@ focal_geo(long axis, float jump)
   long i;
   HWND hwnd;
 
-  hwnd = SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
+  hwnd = (HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
   data = lock_window(hwnd);
-  if (!data)  return(0);
+  if (!data)  return;
   for (i=0; i<18; i++)  if (data->renderdlt[i]) break;
   if (i==18) {
-    unlock_window(data);  return(0); }
+    unlock_window(data);  return; }
   dx0[axis] = jump;
   render_move(0, 0, dx0, 0, 0, data->renderval, data->renderdlt,
               data->renderdlt);
@@ -697,18 +697,17 @@ focal_geo(long axis, float jump)
   InvalidateRect(hwnd, 0, 0);
 }
 
-light_figure(HWND hdlg, HDC hdc, LIGHT *ls)
+void light_figure(HWND hdlg, HDC hdc, LIGHT *ls)
 /* Create the figure showing the current state of the light.
  * Enter: HWND hdlg: handle to dialog to work with.
  *        HDC hdc: device context handle to draw with.
  *        LIGHT *ls: light source to draw, or null to blank screen.
  *                                                            12/27/97-DWM */
 {
-  long w, h, backclr, *lpic, s, i, lastpart=8;
+  long w, h, backclr, *lpic, s, lastpart=8;
   RECT rect;
-  HBITMAP wpic, wpic2;
+  HBITMAP wpic;
   uchar *pic2;
-  LOGPALETTE *lpal;
   long tim=clock();
 
   light_rect(&rect, hdlg);
@@ -717,7 +716,7 @@ light_figure(HWND hdlg, HDC hdc, LIGHT *ls)
   backclr = GetSysColor(COLOR_BTNFACE);
   s = ((w*3+3)/4)*4;
   wpic = GlobalAlloc(GMEM_MOVEABLE, s*h+40);
-  if (!wpic)  return(0);
+  if (!wpic)  return;
   pic2 = GlobalLock(wpic);  lpic = (long *)pic2;
   lpic[0] = 40;  lpic[1] = w;  lpic[2] = h;
   ((short *)pic2)[6] = 1;  ((short *)pic2)[7] = 24;
@@ -735,8 +734,8 @@ light_figure(HWND hdlg, HDC hdc, LIGHT *ls)
   else               PreviewDelay = 1000;
 }
 
-light_figure_draw(long w, long h, long scan, uchar *buf, LIGHT *ls,
-                  long color)
+void light_figure_draw(long w, long h, long scan, uchar *buf, LIGHT *ls,
+                       long color)
 /* Draw the light figure to a buffer.
  * Enter: long w, h: size of figure to draw.
  *        long scan: bytes per scan line.
@@ -778,7 +777,7 @@ light_figure_draw(long w, long h, long scan, uchar *buf, LIGHT *ls,
       buf[d+2] = total[2]/4; } }
 }
 
-light_move(HWND hdlg, long delx, long dely, long w, long h, long down)
+long light_move(HWND hdlg, long delx, long dely, long w, long h, long down)
 /* Actually move the light source, modifying the dialog text fields.
  * Enter: HWND hdlg: handle of current dialog.
  *        long delx, dely: amount of mouse movement.
@@ -816,7 +815,7 @@ light_move(HWND hdlg, long delx, long dely, long w, long h, long down)
   return(1);
 }
 
-light_rect(RECT *rect, HWND hdlg)
+void light_rect(RECT *rect, HWND hdlg)
 /* Locate the rectangle used in a light preview.
  * Enter: RECT *rect: pointer to store result.  If null, the rectangle is
  *                    invalidated (refreshed).
@@ -835,18 +834,18 @@ light_rect(RECT *rect, HWND hdlg)
     InvalidateRect(hdlg, rect, 0);
 }
 
-make_palette()
+void make_palette(void)
 /* Set up a palette for use in preview mode if this is an 8-bit display.
  *  This also initializes the dither tables.                   3/11/97-DWM */
 {
   LOGPALETTE *lpal;
-  uchar *pal2, *pal;
+  uchar *pal;
   long i, j;
 
   pal = smooth_palette(0, SMOOTHLOW);
   use_palette(pal);
   lpal = LocalAlloc(LPTR, sizeof(LOGPALETTE) + 256*sizeof(PALETTEENTRY));
-  if (!lpal) { free2(pal);  return(0); }
+  if (!lpal) { free2(pal);  return; }
   lpal->palVersion = 0x300;  lpal->palNumEntries = 256;
   for (i=0; i<256; i++) {
     lpal->palPalEntry[i].peRed   = pal[i*3];
@@ -892,7 +891,7 @@ HPALETTE make_windows_palette(uchar *pal, long bgr)
   return(wpal);
 }
 
-mouse(HWND hwnd, long but, long up, long flag, long x, long y)
+void mouse(HWND hwnd, long but, long up, long flag, long x, long y)
 /* Handle mouse button pushes and free mouse movement.
  * Enter: HWND hwnd: handle of window this is for.
  *        long but: button number.  -1 for movement, 0 for left, 1 for right,
@@ -903,18 +902,17 @@ mouse(HWND hwnd, long but, long up, long flag, long x, long y)
  *        long x, y: position of the mouse within the window.   4/2/97-DWM */
 {
   static long cur=-1;
-  long newcur=0, i;
-  RECT rect;
+  long newcur=0;
   DATA *data;
 
-  if (!hwnd)  return(0);
+  if (!hwnd)  return;
   if (x>32768)  x -= 65536;  if (y>32768)  y -= 65536;
   if (but>=0 || Down)  LastMove = 0;
   if (Down && (but<0 || up)) {
-    mouse_move(hwnd, up, flag, x, y);  return(0); }
-  if (but>=0 && up) return(0);
+    mouse_move(hwnd, up, flag, x, y);  return; }
+  if (but>=0 && up) return;
   data = lock_window(hwnd);
-  if (!data)  return(0);
+  if (!data)  return;
   DownX = x;  DownY = y;
   if ((!but && (flag&MK_RBUTTON)) || (but==1 && (flag&MK_LBUTTON)))
     but = 2;
@@ -926,7 +924,7 @@ mouse(HWND hwnd, long but, long up, long flag, long x, long y)
     cursor(cur=newcur);
 }
 
-mouse_move(HWND hwnd, long up, long flag, long x, long y)
+void mouse_move(HWND hwnd, long up, long flag, long x, long y)
 /* Handle mouse button releases and constrained mouse movement.  The current
  *  mouse process is defined by the Down value.  This is:
  *   1 - rotate geo.
@@ -964,7 +962,7 @@ mouse_move(HWND hwnd, long up, long flag, long x, long y)
     ReleaseCapture(); }
 }
 
-opacity_dither()
+void opacity_dither(void)
 /* Initialize the opacity dithering table.                    12/28/97-DWM */
 {
   long i;
@@ -973,8 +971,8 @@ opacity_dither()
     opacitytbl[i] = rnd(0, 16776959, 3);
 }
 
-preview_mouse(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp, DATA *data,
-              long num, long ptr)
+long preview_mouse(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp, DATA *data,
+                   long num, long ptr)
 /* Handle mouse movement in the Camera, Cutaway, or Light Options dialog.
  * Enter: HWND hdlg: handle of current dialog window.
  *        long msg: message to process.
@@ -1045,10 +1043,10 @@ HBITMAP reduce_color_space(HBITMAP wpic, HDC hdc)
   long w, h, i;
 
   if (BitsPixel<=8) {
-    wpic2 = PalettizeBMP(wpic, 1, 0);
+    wpic2 = (HBITMAP)PalettizeBMP(wpic, 1, 0);
     if (wpic2) {
       GlobalFree(wpic);  wpic = wpic2;
-      lpal = BMPPalette(wpic);
+      lpal = (LOGPALETTE *)BMPPalette(wpic);
       if (lpal) {
         if (Hpal) { DeleteObject(Hpal);  Hpal = 0; }
         Hpal = CreatePalette(lpal);
@@ -1072,20 +1070,19 @@ HBITMAP reduce_color_space(HBITMAP wpic, HDC hdc)
   return(wpic);
 }
 
-reframe_geo()
+void reframe_geo(void)
 /* Return the geometry to the default position.                 4/1/97-DWM */
 {
   DATA *data;
-  long i;
   HWND hwnd;
   float dx0[4]={0,0,0,0};
 
-  hwnd = SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
+  hwnd = (HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
   data = lock_window(hwnd);
-  if (!data)  return(0);
+  if (!data)  return;
   if (!data->mol.maxcheck) {
     unlock_window(data);
-    error("Atom has not been computed yet.");  return(0); }
+    error("Atom has not been computed yet.");  return; }
   DefSize = data->mol.maxcheck;
   dx0[3] = 2*data->mol.maxcheck;
   render_move(0, 0, dx0, 0, 0, data->renderval, data->renderdlt,
@@ -1095,8 +1092,8 @@ reframe_geo()
   InvalidateRect(hwnd, 0, 0);
 }
 
-render_asymptote(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
-                 DATA *data)
+void render_asymptote(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
+                      DATA *data)
 /* Render the asymptote on an orbital.  This can either be a clear wireframe
  *  or a solid/translucent lighted surface.
  * Enter: long w, h: size of output screen in pixels.
@@ -1108,11 +1105,11 @@ render_asymptote(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
  *                    coordinates of the nodes and viewing flags.
  *                                                            12/28/97-DWM */
 {
-  long i, j, k, color, *elem, *node, e, n, n2, clr, numl, coor[15];
-  float *norm, val;
+  long i, j, k, color, *elem, *node, e, n, n2, numl, coor[15];
+  float *norm;
   LIGHT *ls;
 
-  if (!data->asym.opacity || !data->asym.e || !data->asym.scrxyz)  return(0);
+  if (!data->asym.opacity || !data->asym.e || !data->asym.scrxyz)  return;
   node = data->asym.scrxyz;  elem = data->asym.elem;
   e = data->asym.e*3;  n = data->asym.n;  n2 = n+n;
   color = get_color(data, ASYMCOLOR);
@@ -1127,12 +1124,12 @@ render_asymptote(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
       render_line(w, h, scan, scrbuf, w, zbuf, node[elem[i+1]],
                   node[elem[i+1]+n], node[elem[i+1]+n2], node[elem[i+2]],
                   node[elem[i+2]+n], node[elem[i+2]+n2], color); }
-    return(0); }
+    return; }
   if (data->asym.wire==2) {
     for (i=0; i<e; i++)
       render_point(w, h, scan, scrbuf, zbuf, node[elem[i]], node[elem[i]+n],
                    node[elem[i]+n2], Pref.pointsize, color, 1);
-    return(0); }
+    return; }
   norm = data->asym.norm;
   ls = data->mol.ls;  numl = data->mol.numl;
   for (i=0; i<e && norm; i+=3) {
@@ -1148,11 +1145,11 @@ render_asymptote(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
                          norm[elem[i+j]*3+1]*ls[k].ux[1]+norm[elem[i+j]*3+2]*
                          ls[k].ux[2]))*ls[k].i*65535;
       coor[j*5+4] = 65535*data->asym.opacity; }
-    render_triangle_opac(w, h, scan, scrbuf, w, zbuf, coor, &color); }
+    render_triangle_opac(w, h, scan, scrbuf, w, zbuf, coor, (uchar *)&color); }
 }
 
-render_coor(DATA *data, double *dlt, long **scrxyz, float *node,
-            long numnode, long **scrxyz2, float *node2, long numnode2)
+void render_coor(DATA *data, double *dlt, long **scrxyz, float *node,
+                 long numnode, long **scrxyz2, float *node2, long numnode2)
 /* Convert a set of coordinates into screen coordinates, allocating or
  *  reallocating the scrxyz array as necessary.  This also determines the
  *  actual position of all light sources.
@@ -1179,7 +1176,7 @@ render_coor(DATA *data, double *dlt, long **scrxyz, float *node,
       newx = malloc2(numnode*sizeof(long)*3);
     else
       newx = realloc2(scrxyz[0], numnode*sizeof(long)*3);
-    if (!newx)  return(0);
+    if (!newx)  return;
     scrxyz[0] = newx;  newy = newx+numnode;  newz = newy+numnode; }
   if (!scrxyz2 || !node2)  numnode2 = 0;
   if (numnode2) {
@@ -1235,9 +1232,9 @@ render_coor(DATA *data, double *dlt, long **scrxyz, float *node,
     calc_unit(data->mol.ls[i].ux); }
 }
 
-render_line(long w, long h, long scan, uchar *scrbuf, long zscan,
-            ushort *zbuf, long x0, long y0, long z0, long x1, long y1,
-            long z1, long color)
+void render_line(long w, long h, long scan, uchar *scrbuf, long zscan,
+                 ushort *zbuf, long x0, long y0, long z0, long x1, long y1,
+                 long z1, long color)
 /* Draw a line in 3D.  This line is drawn at the "topmost" point, such that
  *  an equivalent surface will not overwrite it.  Note that coordinates
  *  greater than +/-32767 in x or y will have bizarre effects.
@@ -1261,7 +1258,7 @@ render_line(long w, long h, long scan, uchar *scrbuf, long zscan,
 
   dx = x1-x0;  dy = y1-y0;  dz = z1-z0;  h16 = h<<16;  w16 = w<<16;
   clrb = (color&0xFF);  clrrg = color>>8;
-  if (abs(dx)>10000 || abs(dy)>10000)  return(0);
+  if (abs(dx)>10000 || abs(dy)>10000)  return;
   if (abs(dx)>abs(dy)) {
     if (x0>x1) {
       temp = x0;  x0 = x1;  x1 = temp;
@@ -1308,8 +1305,8 @@ render_line(long w, long h, long scan, uchar *scrbuf, long zscan,
       x0 += dx;  z0 += dz; } }
 }
 
-render_point(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
-             long x, long y, long z, long size, long clr, long bgr)
+void render_point(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
+                  long x, long y, long z, long size, long clr, long bgr)
 /* Draw a single point.
  * Enter: long w, h: size of output screen in pixels.
  *        long scan: number of bytes per scan line on output screen.  Must be
@@ -1323,7 +1320,7 @@ render_point(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
 {
   long r, g, b, dx, dy, zd, d, rr=2*bgr, bb=2-2*bgr;
 
-  if (x<0 || x>=w || y<0 || y>=h || z<=CutZ)  return(0);
+  if (x<0 || x>=w || y<0 || y>=h || z<=CutZ)  return;
   r = clr>>16;  g = (clr>>8)&0xFF;  b = clr&0xFF;
   for (dx=x-size; dx<=x+size; dx++)
     for (dy=y-size; dy<=y+size; dy++) {
@@ -1336,8 +1333,8 @@ render_point(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
         scrbuf[d+rr] = r;  scrbuf[d+1]  = g;  scrbuf[d+bb] = b; } }
 }
 
-render_points(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
-              DATA *data, long bgr)
+void render_points(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
+                   DATA *data, long bgr)
 /* Render the nodal points on a geometry.  The color is taken from the phase.
  * Enter: long w, h: size of output screen in pixels.
  *        long scan: number of bytes per scan line on output screen.  Must be
@@ -1350,7 +1347,7 @@ render_points(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
 {
   long pclr, nclr, *sx, *sy, *sz, clr, i;
 
-  if (!data->points.n || !data->points.scrxyz)  return(0);
+  if (!data->points.n || !data->points.scrxyz)  return;
   pclr = get_color(data, POSCOLOR);  nclr = get_color(data, NEGCOLOR);
   sx = data->points.scrxyz;  sy = sx+data->points.n;  sz = sy+data->points.n;
   for (i=0; i<data->points.n; i++) {
@@ -1360,8 +1357,8 @@ render_points(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
                  Pref.pointsize, clr, bgr); }
 }
 
-render_polygon(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
-               DATA *data)
+void render_polygon(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
+                    DATA *data)
 /* Render the polygon orbital.  This can either be a clear wireframe or a
  *  solid/translucent lighted surface.
  * Enter: long w, h: size of output screen in pixels.
@@ -1373,13 +1370,12 @@ render_polygon(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
  *                    coordinates of the nodes and viewing flags.
  *                                                            12/29/97-DWM */
 {
-  long i, j, k, colorp, colorn, *elem, *node, e, n, n2, clr, numl, coor[15];
-  long color;
-  float *norm, val;
+  long i, j, k, colorp, colorn, *elem, *node, e, n, n2, numl, coor[15], color;
+  float *norm;
   real opac;
   LIGHT *ls;
 
-  if (!data->poly.e || !data->poly.scrxyz)  return(0);
+  if (!data->poly.e || !data->poly.scrxyz)  return;
   node = data->poly.scrxyz;  elem = data->poly.elem;
   e = data->poly.e*3;  n = data->poly.n;  n2 = n+n;
   colorp = get_color(data, POSCOLOR);
@@ -1397,14 +1393,14 @@ render_polygon(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
       render_line(w, h, scan, scrbuf, w, zbuf, node[elem[i+1]],
                   node[elem[i+1]+n], node[elem[i+1]+n2], node[elem[i+2]],
                   node[elem[i+2]+n], node[elem[i+2]+n2], color); }
-    return(0); }
+    return; }
   if (data->poly.wire==2) {
     for (i=0; i<e; i++) {
       if (data->poly.phase[i/3]>0)  color = colorp;
       else                          color = colorn;
       render_point(w, h, scan, scrbuf, zbuf, node[elem[i]], node[elem[i]+n],
                    node[elem[i]+n2], Pref.pointsize, color, 1); }
-    return(0); }
+    return; }
   norm = data->poly.norm;
   ls = data->mol.ls;  numl = data->mol.numl;
   for (i=0; i<e; i+=3) {
@@ -1424,10 +1420,10 @@ render_polygon(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
                          norm[elem[i+j]*3+1]*ls[k].ux[1]+norm[elem[i+j]*3+2]*
                          ls[k].ux[2]))*ls[k].i*65535;
       coor[j*5+4] = 65535*opac; }
-    render_triangle_opac(w, h, scan, scrbuf, w, zbuf, coor, &color); }
+    render_triangle_opac(w, h, scan, scrbuf, w, zbuf, coor, (uchar *)&color); }
 }
 
-render_sort_coor(long *coor, long *x, long s, long d)
+void render_sort_coor(long *coor, long *x, long s, long d)
 /* Sort the three coordinates so the lowest y value is first.
  * Enter: long *coor: pointer to coordinate array.
  *        long *x: pointer to output storage array.
@@ -1459,8 +1455,8 @@ render_sort_coor(long *coor, long *x, long s, long d)
             memcpy(x+d2, coor+s2, s*sizeof(long)); }
 }
 
-render_triangle_opac(long w, long h, long scan, uchar *scrbuf, long zscan,
-                     ushort *zbuf, long coor[15], uchar *color)
+void render_triangle_opac(long w, long h, long scan, uchar *scrbuf, long zscan,
+                          ushort *zbuf, long coor[15], uchar *color)
 /* Draw a triangle shaded based on a scalar value at each point.  Note that
  *  coordinates greater than +/-32767 in x or y will have bizarre effects.
  * Enter: long w, h: size of output screen in pixels.  These values, along
@@ -1481,12 +1477,12 @@ render_triangle_opac(long w, long h, long scan, uchar *scrbuf, long zscan,
  *                      color.  RGB is the same sense as the destination
  *                      screen.                               12/28/97-DWM */
 {
-  long x[20], dx[15], i, j, k, l, y, xi, src, dest, za;
+  long x[20], dx[15], j, k, l, y, xi, dest, za;
   long x1, z1, I1, o1, x2, z2, I2, o2, xi1, xi2, dz, ds, dt, z, I, o, zdest;
   double den, inten;
 
   render_sort_coor(coor, x, 5, 5);
-  if (x[11]<0 || x[1]>=h)  return(0);
+  if (x[11]<0 || x[1]>=h)  return;
   for (j=k=0; j<3; j++,k+=5) {
     x[0+k] = (x[0+k]<<8)+0x80;  x[2+k] = (x[2+k]<<8)+0x80;
     if (x[3+k]<0) x[3+k] = 0;  if (x[3+k]>=65535)  x[3+k] = 65535;
@@ -1498,9 +1494,9 @@ render_triangle_opac(long w, long h, long scan, uchar *scrbuf, long zscan,
     for (l=0; l<5; l++)  if (l!=1)
       dx[l+k] = (x[k+5+l]-x[k+l])*den; }
   x1 = x2 = x[0];  z1 = z2 = x[2];  I1 = I2 = x[3];  o1 = o2 = x[4];
-  if (z1<CutZ && x[7]<CutZ && x[12]<CutZ)  return(0);
+  if (z1<CutZ && x[7]<CutZ && x[12]<CutZ)  return;
   if (x[11]>h-1)  x[11] = h-1;
-  if (x[11]-x[1]>10000)  return(0);
+  if (x[11]-x[1]>10000)  return;
   za = abs(dx[2])+abs(dx[12])-1;  if (za>25499)  za = 25499;
   for (y=x[1]; y<=x[11]; y++) {
     if (y==x[6]) {
@@ -1541,9 +1537,10 @@ render_triangle_opac(long w, long h, long scan, uchar *scrbuf, long zscan,
     o1 += dx[14];  o2 += dx[4]; }
 }
 
-render_triangle_texture(long w, long h, long scan, uchar *scrbuf, long zscan,
-                    ushort *zbuf, long coor[15], long pw, long ph, long ppal,
-                    uchar *photo, long bgr, long scale, float bright)
+void render_triangle_texture(long w, long h, long scan, uchar *scrbuf,
+                             long zscan, ushort *zbuf, long coor[15], long pw,
+                             long ph, long ppal, uchar *photo, long bgr,
+                             long scale, float bright)
 /* Draw a triangle textured from a photograph in 3D.  Note that coordinates
  *  greater than +/-32767 in x or y will have bizarre effects.  If photo
  *  coordinates are not within the photograph, the photograph will be
@@ -1570,13 +1567,13 @@ render_triangle_texture(long w, long h, long scan, uchar *scrbuf, long zscan,
  *        long scale: interpolation parameter (0-none, 1-bicubic).
  *        float bright: brightness to adjust picture by.       3/20/97-DWM */
 {
-  long x[20], dx[15], i, j, k, l, rr=2*bgr, bb=2-2*bgr, y, xi, src, dest;
+  long x[20], dx[15], j, k, l, rr=2*bgr, bb=2-2*bgr, y, xi, src, dest;
   long x1, z1, s1, t1, x2, z2, s2, t2, xi1, xi2, dz, ds, dt, z, s, t, zdest;
   long src2, src3, src4, m1, m2, m3, m4, za, bl;
   double den;
 
   render_sort_coor(coor, x, 5, 5);
-  if (x[11]<0 || x[1]>=h)  return(0);
+  if (x[11]<0 || x[1]>=h)  return;
   for (j=k=0; j<3; j++,k+=5) {
     x[0+k] = (x[0+k]<<8)+0x80;  x[2+k] = (x[2+k]<<8)+0x80;
     if (x[3+k]<0) x[3+k] = 0;  if (x[3+k]>=pw-scale)  x[3+k] = pw-1-scale;
@@ -1589,9 +1586,9 @@ render_triangle_texture(long w, long h, long scan, uchar *scrbuf, long zscan,
     for (l=0; l<5; l++)  if (l!=1)
       dx[l+k] = (x[k+5+l]-x[k+l])*den; }
   x1 = x2 = x[0];  z1 = z2 = x[2];  s1 = s2 = x[3];  t1 = t2 = x[4];
-  if (z1<CutZ && x[7]<CutZ && x[12]<CutZ)  return(0);
+  if (z1<CutZ && x[7]<CutZ && x[12]<CutZ)  return;
   if (x[11]>h-1)  x[11] = h-1;
-  if (x[11]-x[1]>10000)  return(0);
+  if (x[11]-x[1]>10000)  return;
   za = abs(dx[2])+abs(dx[12])-1;  if (za>25499)  za = 25499;
   for (y=x[1]; y<=x[11]; y++) {
     if (y==x[6]) {
@@ -1649,16 +1646,15 @@ render_triangle_texture(long w, long h, long scan, uchar *scrbuf, long zscan,
     t1 += dx[14];  t2 += dx[4]; }
 }
 
-reset_geo()
+void reset_geo(void)
 /* Return the geometry to the default position.                 4/1/97-DWM */
 {
   DATA *data;
-  long i;
   HWND hwnd;
 
-  hwnd = SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
+  hwnd = (HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
   data = lock_window(hwnd);
-  if (!data)  return(0);
+  if (!data)  return;
   DefSize = data->mol.maxcheck;
   render_dlt_new(0, 0, 100, 100, Pref.perspec, data->renderval,
                  data->renderdlt);
@@ -1667,7 +1663,7 @@ reset_geo()
   InvalidateRect(hwnd, 0, 0);
 }
 
-rotate_geo(long axis, float ang)
+void rotate_geo(long axis, float ang)
 /* Rotate the geometry associated with the top window.
  * Enter: long axis: 0-x, 1-y, 2-z.
  *        float ang: angle in degrees.                         3/31/97-DWM */
@@ -1677,12 +1673,12 @@ rotate_geo(long axis, float ang)
   long i;
   HWND hwnd;
 
-  hwnd = SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
+  hwnd = (HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
   data = lock_window(hwnd);
-  if (!data)  return(0);
+  if (!data)  return;
   for (i=0; i<18; i++)  if (data->renderdlt[i]) break;
   if (i==18) {
-    unlock_window(data);  return(0); }
+    unlock_window(data);  return; }
   dang[axis] = ang*deg;
   render_move(0, dang, 0, 0, 0, data->renderval, data->renderdlt,
               data->renderdlt);
@@ -1691,8 +1687,8 @@ rotate_geo(long axis, float ang)
   InvalidateRect(hwnd, 0, 0);
 }
 
-scale_pic24(uchar *dest, uchar *source, short srcw, short destw, short simgw,
-            short dimgw, short simgh, short dimgh)
+void scale_pic24(uchar *dest, uchar *source, short srcw, short destw,
+                 short simgw, short dimgw, short simgh, short dimgh)
 /* Scale a 24-bit color image.  Interpolation is always performed.  If the
  *  source image is not the same shape as the destination image, the edges
  *  are letterboxed.  The image's aspect ratio is maintained.
@@ -1709,7 +1705,7 @@ scale_pic24(uchar *dest, uchar *source, short srcw, short destw, short simgw,
   if (h>dimgh || w==simgw*dimgh/simgh) {
     h = dimgh;  w = simgw*h/simgh;  if (w>dimgw) w = dimgw; }
   if (w==simgw && h==simgh)  inter = 0;
-  if (!(horz=malloc2((w+h)*sizeof(long)*4)))  return(0);
+  if (!(horz=malloc2((w+h)*sizeof(long)*4)))  return;
   vert = horz+w*4;
   step = min((float)simgw/w, (float)simgh/h);
   for (i=0; i<w; i++)
@@ -1750,8 +1746,8 @@ scale_pic24(uchar *dest, uchar *source, short srcw, short destw, short simgw,
   free2(horz);
 }
 
-scale_zbuf(ushort *dest, ushort *source, short simgw, short dimgw,
-           short simgh, short dimgh)
+void scale_zbuf(ushort *dest, ushort *source, short simgw, short dimgw,
+                short simgh, short dimgh)
 /* Scale a zbuffer image.  When scaled down, rows are dropped; when scaled
  *  up, rows are duplicated.  If the source image is not the same shape as
  *  the destination image, the edges are letterboxed.  The image's aspect
@@ -1766,7 +1762,7 @@ scale_zbuf(ushort *dest, ushort *source, short simgw, short dimgw,
   w = dimgw;  h = simgh*w/simgw;
   if (h>dimgh || w==simgw*dimgh/simgh) {
     h = dimgh;  w = simgw*h/simgh;  if (w>dimgw) w = dimgw; }
-  if (!(horz=malloc2((w+h)*sizeof(long))))  return(0);
+  if (!(horz=malloc2((w+h)*sizeof(long))))  return;
   vert = horz+w;
   step = min((float)simgw/w, (float)simgh/h);
   for (i=0; i<w; i++)
@@ -1780,7 +1776,7 @@ scale_zbuf(ushort *dest, ushort *source, short simgw, short dimgw,
   free2(horz);
 }
 
-shift_geo(long axis, float jump)
+void shift_geo(long axis, float jump)
 /* Shift the geometry associated with the top window.
  * Enter: long axis: 0-x, 1-y, 2-z.
  *        float jump: portion of the screen to jump.           3/31/97-DWM */
@@ -1790,12 +1786,12 @@ shift_geo(long axis, float jump)
   long i;
   HWND hwnd;
 
-  hwnd = SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
+  hwnd = (HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
   data = lock_window(hwnd);
-  if (!data)  return(0);
+  if (!data)  return;
   for (i=0; i<18; i++)  if (data->renderdlt[i]) break;
   if (i==18) {
-    unlock_window(data);  return(0); }
+    unlock_window(data);  return; }
   dx[axis] = jump;
   render_move(dx, 0, 0, 0, 0, data->renderval, data->renderdlt,
               data->renderdlt);
@@ -1817,7 +1813,6 @@ uchar *smooth_palette(DATA *data, long numcolors)
  * Exit:  uchar *pal: allocated palette, or null for an error. 3/21/97-DWM */
 {
   long i, j, d, s, clr[4];
-  PREF *pref;
   float v;
   uchar *pal, *cclr;
   uchar winpal[]={0,0,0, 128,0,0, 0,128,0, 128,128,0, 0,0,128, 128,0,128, 0,128,128, 151,151,151, 128,128,128, 255,0,0, 192,192,192, 255,255,0, 0,0,255, 128,128,255, 0,255,255, 255,255,255};
@@ -1852,7 +1847,7 @@ long sphere_inter(real *x, real *v, real radius, real *inter)
  * Exit:  long hit: 0 for missed, 1 for within radius, 2 for two intercepts.
  *                                                             7/29/97-DWM */
 {
-  real v1[3], temp[3], min, cost, curr, curr1, curr2;
+  real v1[3], min, cost, curr, curr1, curr2;
 
   memcpy(v1, v, 3*sizeof(real));
   calc_unit(v1);
@@ -1927,7 +1922,7 @@ void stereo_figure(HWND hdlg, long mode, long swap, STEREO *st)
         memcpy(src, PreviewGraphic+k*ow*oh*3, ow*oh*3); }
     dest = unlock2(src); }
   if (dest && BitsPixel<=8) {
-    temp = PalettizeGraphic(w, h, 1, dest, 1, 0);
+    temp = (HANDLE)PalettizeGraphic(w, h, 1, dest, 1, 0);
     free2(lock2(dest));
     pal = 1;
     dest = temp; }

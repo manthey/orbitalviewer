@@ -12,6 +12,7 @@
 #include "ovrc.h"
 #include "ov.h"
 #include "data.h"
+#include "draw.h"
 #include "\p\lib\gvlib.h"
 
 char HelpFile[]="OV.HLP", lastview[1024], Program[]="Orbital Viewer",

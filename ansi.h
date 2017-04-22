@@ -24,6 +24,9 @@
 
 #include "orb.h"
 
+#define stricmp _stricmp
+#define strnicmp _strnicmp
+
 typedef struct PREF {
   long flags;
   float perspec;
