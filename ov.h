@@ -43,6 +43,7 @@
 #define FileVRML         5
 #define FileDigistar     6
 
+#include "matrix.h"
 #include "orb.h"
 
 typedef struct PREF {
@@ -97,26 +98,19 @@ typedef struct DATA {
 #define debug(x) MessageBox(Hwnd, (x), "--", MB_OK)
 
 BOOL CALLBACK asymptote_dialog   (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
-BOOL CALLBACK check_dialog       (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
-BOOL CALLBACK color_dialog       (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
-VOID CALLBACK hide_splash        (HWND hwnd,ulong msg,ulong id,long time);
 LRESULT CALLBACK main_loop       (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
 BOOL CALLBACK orbital_dialog     (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
 BOOL CALLBACK point_dialog       (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
 BOOL CALLBACK polygon_dialog     (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
-BOOL CALLBACK preferences_dialog (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
 BOOL CALLBACK progress_dialog    (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
 BOOL CALLBACK render_dialog      (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
 BOOL CALLBACK render_opt_dialog  (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
-BOOL CALLBACK save_dialog        (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
 BOOL CALLBACK sequence_dialog    (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
-BOOL CALLBACK splash_dialog      (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
 BOOL CALLBACK stereo_dialog      (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
 VOID CALLBACK timer              (HWND hwnd,ulong msg,ulong id,long time);
 
 void     camera_rotate  (double *renderval, double *renderdlt, double *phys,
                          long dir);
-char    *find_space     (char *text);
 void     free2          (void *mem);
 double   interpolate    (double *val, long *time);
 DATA    *lock_window    (HANDLE hnd);
@@ -141,9 +135,8 @@ HANDLE   unlock2        (void *mem);
 void     update_process (DATA *data);
 HWND     window_handle  (DATA *data);
 
-extern char *DistText[], HelpFile[], lastview[],
-       *MassText[], OpenName[], OrbLet[], Program[], *RadText[], Untitled[],
-       WinName2[];
+extern char *DistText[], HelpFile[], lastview[], *MassText[], OrbLet[],
+       Program[], *RadText[], Untitled[], WinName2[];
 extern DATA *DispData;
 extern float DefSize;
 extern HPALETTE Hpal, HpalSplash;

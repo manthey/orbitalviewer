@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "file.h"
 #include "matrix.h"
 #include "ovrc.h"
 #include "ov.h"

@@ -2,6 +2,9 @@
  *  working with double precision values are prefixed by a lower case L.
  *                                                             8/17/94-DWM */
 
+#ifndef MATRIXHEADER                             /* Prevent double inclusion */
+#define MATRIXHEADER 1
+
 typedef struct matrix {
   long w, h;
   float *m; } matrix;
@@ -88,3 +91,5 @@ long     rowreduce     (matrix *a);
 long     rowreduce2    (matrix *a, matrix *b);
 float   *unit          (float *v, float *r);
 void     yprtomat      (float *rot, float y, float p, float r);
+
+#endif                                    /* End of prevent double inclusion */

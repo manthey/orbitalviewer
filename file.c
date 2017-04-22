@@ -9,15 +9,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "file.h"
 #include "matrix.h"
 #include "dlt.h"
+#include "draw.h"
 #include "ovrc.h"
 #include "ov.h"
 #include "\p\lib\gvlib.h"
 
 #include "common.c"
 
-char OpenDir[DIRLEN*7], OpenName[NAMELEN], opfilter[NAMELEN];
+char OpenName[NAMELEN];
+
+char OpenDir[DIRLEN*7], opfilter[NAMELEN];
 HBITMAP SplashBMP=0;
 long CustColor[16], FilterType[7]={1,1,1,1,1,1,1};
 OPENFILENAME openfile;
@@ -43,13 +47,11 @@ char SaveFilterB[]="VRML 1.0 file (*.WRL)|*.WRL|";
 char SaveFilterC[]="AVI file (*.AVI)|*.AVI|";
 char SaveFilterD[]="Digistar file (*.TXT)|*.TXT|";
 
-compress_avi_stream(HWND hwnd, PAVISTREAM stream, AVISTREAMINFO *info,
-                    PAVIFILE cavi);
 
-add_extensions(hwnd)
+void add_extensions(HWND hwnd)
 /* Enter: HWND hwnd: handle of window.                         5/27/96-DWM */
 {
-  char ext[]="Extensions", base[256], out[256], *cmd, ekey[5];
+  char ext[]="Extensions", base[256], out[256], *cmd;
   long i, j;
   HKEY hkey;
 
@@ -58,7 +60,7 @@ add_extensions(hwnd)
                    "ORB file is run, Orbital Viewer will automatically\n"
                    "be used to load it.", "Link Extensions",
       MB_OKCANCEL)!=IDOK)
-    return(0);
+    return;
   cursor(1);
   cmd = GetCommandLine();
   if (strlen(cmd)<245)  strcpy(base, cmd);  else  strcpy(base, Program);
@@ -104,7 +106,7 @@ BOOL CALLBACK check_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
     case WM_INITDIALOG: if (CloseMode!=1) {
         ctrl = GetDlgItem(hdlg, CheckAll);   DestroyWindow(ctrl);
         ctrl = GetDlgItem(hdlg, CheckNone);  DestroyWindow(ctrl); }
-      GetWindowText(SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0), name,
+      GetWindowText((HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0), name,
                     ONENAMELEN-1);
       if (!strcmp(text, Untitled))
         strcpy(text, "This file has not been saved.  Save it?");
@@ -124,9 +126,8 @@ long close_window(HWND hwnd)
 {
   DATA *data;
   long res;
-  char text[ONENAMELEN+80];
 
-  if (hwnd==SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0)) {
+  if (hwnd==(HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0)) {
     if (IsZoomed(hwnd))        Pref.flags |= 2;
     else if (!IsIconic(hwnd))  Pref.flags &= 0xFFFFFFFD; }
   data = lock_window(hwnd);
@@ -138,7 +139,8 @@ long close_window(HWND hwnd)
   unlock_window(data);
   switch (CloseMode) {
     case 0: case 1: Busy++;
-      res = DialogBox(hinst, CheckDLG, hwnd, check_dialog);
+      res = DialogBox(hinst, MAKEINTRESOURCE(CheckDLG), hwnd,
+                      (DLGPROC)check_dialog);
       Busy--;
       if (res==CheckAll) {  CloseMode = 3;  res = IDYES; }
       if (res==CheckNone) { CloseMode = 2;  res = IDNO; } break;
@@ -161,7 +163,6 @@ BOOL CALLBACK color_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   HWND hwnd;
   DATA *data=0, *data3;
   static DATA data2;
-  char text[80];
   long *clr, box[]={80,6,64,18, 24}, out[4], i, j, k, c, c2, old[NUMPREFCOLORS];
   RECT rect;
   PAINTSTRUCT paint;
@@ -173,13 +174,14 @@ BOOL CALLBACK color_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
     case WM_COMMAND: switch (wp&0xFFFF) {
       case ColorClr1: case ColorClr2: case ColorClr3: case ColorClr4:
       case ColorClr5: cc.lStructSize = sizeof(CHOOSECOLOR);
-        cc.hwndOwner = hdlg;  cc.hInstance = hinst;
+        cc.hwndOwner = hdlg;
+        cc.hInstance = (HWND)hinst;
         cc.rgbResult = get_color(&data2, (wp&0xFFFF)-ColorClr1);
-        bgr_to_rgb(&cc.rgbResult, 1);
+        bgr_to_rgb((uchar *)&cc.rgbResult, 1);
         cc.lpCustColors = CustColor;
         cc.Flags = CC_FULLOPEN|CC_RGBINIT;  cc.lCustData = 0;
         if (ChooseColor(&cc)) {
-          i = cc.rgbResult;  bgr_to_rgb(&i, 1);
+          i = cc.rgbResult;  bgr_to_rgb((uchar *)&i, 1);
           data2.pref.colors[(wp&0xFFFF)-ColorClr1] = i;
           i = (wp&0xFFFF)-ColorClr1;
           map_dialog_rect(hdlg, box[0],box[1]+box[4]*i, box[2],box[3], out);
@@ -194,7 +196,7 @@ BOOL CALLBACK color_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
         InvalidateRect(hdlg, &rect, 1); break;
       case HelpHelp: WinHelp(Hwnd,HelpFile,HELP_CONTEXT,HelpColor); break;
       case IDOK: clr = Pref.colors;
-        if (hwnd=SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0))
+        if (hwnd=(HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0))
           if (data=lock_window(hwnd))
             clr = data->pref.colors;
         Pref.flags &= 0xFFFFFF3F;
@@ -235,7 +237,7 @@ BOOL CALLBACK color_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
       case IDCANCEL: EndDialog(hdlg, 1);  return(1);
       default: return(0); } break;
     case WM_INITDIALOG: clr = Pref.colors;
-      if (hwnd=SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0))
+      if (hwnd=(HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0))
         if (data=lock_window(hwnd))
           clr = data->pref.colors;
       memset(&data2, 0, sizeof(DATA));
@@ -268,7 +270,7 @@ BOOL CALLBACK color_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   return(0);
 }
 
-compress_avi()
+void compress_avi(void)
 /* Present a dialog to select an AVI, then ask for compression options, then
  *  for a save name, then compress it.                         1/21/98-DWM */
 {
@@ -284,7 +286,7 @@ compress_avi()
   start_avi();
   if (!havi) {
     recheck(0, 0);
-    error(Hwnd, "Can't access Windows AVI function calls.");  return(0); }
+    error(Hwnd, "Can't access Windows AVI function calls.");  return; }
   strcpy(opfilter, OpenFilter3);
   len = strlen(opfilter);
   for (i=0; i<len; i++)  if (opfilter[i]=='|')  opfilter[i] = 0;
@@ -299,16 +301,16 @@ compress_avi()
   openfile.Flags = OFN_FILEMUSTEXIST|OFN_HIDEREADONLY|OFN_PATHMUSTEXIST|
                    OFN_EXPLORER;
   memset(OpenName, 0xFF, NAMELEN);  OpenName[0] = 0;
-  if (!GetOpenFileName(&openfile))  return(0);
+  if (!GetOpenFileName(&openfile))  return;
   FilterType[5] = openfile.nFilterIndex;
   if (!(fptr=fopen(OpenName, "rb"))) {
-    error(Hwnd, "Can't read file.");  return(0); }
+    error(Hwnd, "Can't read file.");  return; }
   if (strchr(OpenName, '\\'))
     strpath(OpenDir+DIRLEN*5, OpenName);
   fread(buf, 1, 12, fptr);
   fclose(fptr);
   if (memcmp(buf, "RIFF", 4) || memcmp(buf+8, "AVI ", 4)) {
-    error(Hwnd, "File is not a recognized AVI file.");  return(0); }
+    error(Hwnd, "File is not a recognized AVI file.");  return; }
   strcpy(oname, OpenName);
   strcpy(opfilter, SaveFilterC);
   len = strlen(opfilter);
@@ -318,14 +320,14 @@ compress_avi()
   openfile.lpstrFileTitle = openfile.lpstrCustomFilter = 0;
   openfile.lpstrInitialDir = OpenDir+DIRLEN*6;
   openfile.lpstrTitle = 0;
-  openfile.lpfnHook = save_dialog;
+  openfile.lpfnHook = (DLGPROC)save_dialog;
   openfile.Flags = OFN_ENABLEHOOK|OFN_HIDEREADONLY|OFN_PATHMUSTEXIST|
                    OFN_EXPLORER|(OFN_OVERWRITEPROMPT*Pref.warn);
   memset(OpenName, 0xFF, NAMELEN);  OpenName[0] = 0;
-  if (!GetSaveFileName(&openfile))  return(0);
+  if (!GetSaveFileName(&openfile))  return;
   if (!stricmp(OpenName, oname)) {
     error(Hwnd, "Destination file can not be the same as source file.");
-    return(0); }
+    return; }
   FilterType[6] = openfile.nFilterIndex;
   if (strchr(OpenName, '\\'))
     strpath(OpenDir+DIRLEN*6, OpenName);
@@ -333,18 +335,18 @@ compress_avi()
   end_ctl3d();              /* If CTL3D is enabled, AVISaveOptions crashes */
   if ((*GetProcAddress(havi,"AVIFileOpen"))(&oavi, oname, OF_READ, 0)) {
     error(Hwnd, "Couldn't open AVI file using Windows AVI function.");
-    start_ctl3d();  return(0); }
+    start_ctl3d();  return; }
   remove(cname);                                /* delete destination file */
   if ((*GetProcAddress(havi,"AVIFileOpen"))(&cavi, cname, OF_CREATE|OF_WRITE, 0)) {
     error(Hwnd, "Couldn't create destination file.");
     (*GetProcAddress(havi,"AVIFileRelease"))(oavi);  start_ctl3d();
-    return(0); }
+    return; }
   if ((*GetProcAddress(havi,"AVIStreamOpenFromFile"))(&stream, oname,
       streamtypeVIDEO, 0, OF_READ,0)) {
     error(Hwnd, "Couldn't find source video.");
     (*GetProcAddress(havi,"AVIFileRelease"))(oavi);
     (*GetProcAddress(havi,"AVIFileRelease"))(cavi);
-    start_ctl3d();  return(0); }
+    start_ctl3d();  return; }
   sarray[0] = stream;
   oarray[0] = &opt;
   memset(oarray[0], 0, sizeof(AVICOMPRESSOPTIONS));
@@ -353,7 +355,7 @@ compress_avi()
       sarray, oarray))) {
     (*GetProcAddress(havi,"AVIFileRelease"))(oavi);
     (*GetProcAddress(havi,"AVIFileRelease"))(cavi);
-    start_ctl3d();  return(0); }
+    start_ctl3d();  return; }
   stream = 0;
   if ((*GetProcAddress(havi,"AVIMakeCompressedStream"))(&stream, sarray[0],
       oarray[0], 0)==AVIERR_OK) {
@@ -371,8 +373,8 @@ compress_avi()
   start_ctl3d();
 }
 
-compress_avi_stream(HWND hwnd, PAVISTREAM stream, AVISTREAMINFO *info,
-                    PAVIFILE cavi)
+void compress_avi_stream(HWND hwnd, PAVISTREAM stream, AVISTREAMINFO *info,
+                         PAVIFILE cavi)
 /* Actually copy the original file to the compressed file.
  * Enter: HWND hwnd: handle of calling window.
  *        PAVISTREAM: pointer to input stream.
@@ -385,13 +387,13 @@ compress_avi_stream(HWND hwnd, PAVISTREAM stream, AVISTREAMINFO *info,
 
   (*GetProcAddress(havi,"AVIStreamReadFormat"))(stream, 0, 0, &fsize);
   bsize = fsize;
-  if (!(buf=malloc2(bsize)))  return(0);
+  if (!(buf=malloc2(bsize)))  return;
   memset(buf, 0, bsize);
   (*GetProcAddress(havi,"AVIStreamReadFormat"))(stream, 0, buf, &fsize);
   if ((*GetProcAddress(havi,"AVIFileCreateStream"))(cavi, &new, info)) {
-    free2(buf);  return(0); }
+    free2(buf);  return; }
   if ((*GetProcAddress(havi,"AVIStreamSetFormat"))(new, 0, buf, fsize)) {
-    free2(buf);  return(0); }
+    free2(buf);  return; }
   bsize = fsize;  stsize = 0;
   (*GetProcAddress(havi,"AVIStreamRead"))(stream,
                    (*GetProcAddress(havi,"AVIStreamStart"))(stream),
@@ -400,7 +402,7 @@ compress_avi_stream(HWND hwnd, PAVISTREAM stream, AVISTREAMINFO *info,
     if (((((long *)buf)[1]*3+3)&0xFFFFFFFC)*((long *)buf)[2]>stsize)
       stsize = ((((long *)buf)[1]*3+3)&0xFFFFFFFC)*((long *)buf)[2];
   if (stsize>bsize) {
-    if (!(buf2=realloc2(buf, stsize))) { free2(buf);  return(0); }
+    if (!(buf2=realloc2(buf, stsize))) { free2(buf);  return; }
     buf = buf2;  bsize = stsize;  memset(buf, 0, bsize); }
   start = (*GetProcAddress(havi,"AVIStreamStart"))(stream);
   end = (*GetProcAddress(havi,"AVIStreamStart"))(stream) +
@@ -420,7 +422,7 @@ compress_avi_stream(HWND hwnd, PAVISTREAM stream, AVISTREAMINFO *info,
   (*GetProcAddress(havi,"AVIStreamRelease"))(new);
 }
 
-copy()
+void copy(void)
 /* Copy the current image to the clipboard.                     1/8/98-DWM */
 {
   HGLOBAL gmem;
@@ -431,8 +433,8 @@ copy()
   RECT rect;
   long w, h, ow, oh, old=0, freeimg=1;
 
-  if (!(hwnd=SendMessage(HwndC,WM_MDIGETACTIVE,0,0)))  return(0);
-  if (!(data=lock_window(hwnd)))  return(0);
+  if (!(hwnd=(HWND)SendMessage(HwndC,WM_MDIGETACTIVE,0,0)))  return;
+  if (!(data=lock_window(hwnd)))  return;
   cursor(1);
   if (OpenClipboard(hwnd)) {
     GetClientRect(hwnd, &rect);
@@ -453,7 +455,7 @@ copy()
       error(hwnd, "Low memory: Clipboard Allocation");
       free2(lock2(wpic));  unlock_window(data);
       cursor(0);
-      return(0); }
+      return; }
     dest = GlobalLock(gmem);
     src = lock2(wpic);
     memmove(dest, src, GlobalSize(wpic));
@@ -466,7 +468,7 @@ copy()
   unlock_window(data);
 }
 
-drop_file(HANDLE drop)
+void drop_file(HANDLE drop)
 /* Handle dropped-in files just as if they were opened.        10/1/96-DWM */
 {
   long n, i, len=0;
@@ -474,7 +476,7 @@ drop_file(HANDLE drop)
 
   n = DragQueryFile(drop, -1, 0, 0);
   if (n==0) {
-    DragFinish(drop);  return(0); }
+    DragFinish(drop);  return; }
   for (i=0; i<n && len<NAMELEN-1; i++) {
     name[len] = 0;
     DragQueryFile(drop, i, name2, NAMELEN-len-2);
@@ -486,165 +488,6 @@ drop_file(HANDLE drop)
   DragFinish(drop);
   strcpy(OpenName, name);
   open_window_mid();
-}
-
-long find_file(char *name, long type, long recurse, WIN32_FIND_DATA *find,
-               char *path)
-/* Locate a file, recursing subdirectories if requested.  Note that the
- *  maximum recursion is 20 subdirectories.  This requires 1k of data space.
- *  To repeat a call to find_file to locate the next file of a group, pass a
- *  null to the name, type, and recurse variables.  To cancel a find_file
- *  call, pass a null to all variables.
- * Enter: char *name: name including wildcards and possibly a path.  If the
- *                    first character of this is a null, then the second
- *                    character specifies how many extensions to search for.
- *                    Starting with the third character is the path, then
- *                    the extensions, which may be a maximum of three
- *                    characters and do not include the period.  The path and
- *                    extensions are separated by nulls.  A maximum of 63
- *                    extensions may be specified.
- *        long type: low byte contains required field values, high byte
- *                   contains field masks.  The fields are: bit 0-read only,
- *                   1-hidden, 2-system, 3-volume ID, 4-subdirectory,
- *                   5-archive.  0x1E00 locates only 'normal' files.
- *        long recurse: 0 for do not recurse subdirectories, 1 for recurse
- *                      all subdirectories, 2 for recurse only subdirectories
- *                      which would have been found by the name
- *                      specification.
- *        WIN32_FIND_DATA *find: structure to return information in.  0 for
- *                               no return.
- *        char *path: string to store path in.  If find is 0, the entire
- *                    file name, including path, is stored here.  This must
- *                    be at least 64 bytes, including the terminating null.
- *                    0 for no return.  There is never a terminating \ on the
- *                    path string.
- * Exit:  long none: 0 for file found, 1 for no more files.      6/7/95-DWM */
-{
-  #define maxrecursedepth 20
-  static WIN32_FIND_DATA f[maxrecursedepth], *last=0;
-  static HANDLE h[maxrecursedepth];
-  static long depth, new, multi;
-  static char root[256], spec[256], xtype, atype, rec;
-  char fname[256], *temp;
-  long i, found=0;
-
-  if (!name && !path && !find) {
-    for (i=0; i<=depth; i++)
-      FindClose(h[depth]);
-    return(0); }
-  if (name) {
-    if (!name[0]) {
-      multi = name[1];  if (multi<0) multi=0;  if (multi>63) multi=63;
-      strcpy(root, name+2);
-      strcpy(spec, "*.*");
-      name += 2+strlen(name+2)+1;
-      for (i=0; i<multi; i++) {
-        strcpy(spec+4+i*4, name);
-        name += strlen(name)+1; }
-      name = 0;
-      depth = 0;  new = 1;
-      rec = recurse;  atype = type>>8;  xtype = type&0x3F; } }
-  if (name) {
-    multi = 0;
-    getcwd(root, 256-1);
-    if (strchr(name, '\\')) {
-      strcpy(spec, strrchr(name, '\\')+1);
-      strrchr(name, '\\')[0] = 0;
-      if (name[1]!=':' && name[0]!='\\') {
-        if (strlen(name)+strlen(root)>256-2)
-          name[256-1-strlen(root)-1] = 0;
-        sprintf(root+strlen(root), "\\%s", name); }
-      else
-        strcpy(root, name); }
-    else
-      strcpy(spec, name);
-    if (root[strlen(root)-1]=='\\')
-      root[strlen(root)-1] = 0;
-    depth = 0;  new = 1;
-    rec = recurse;  atype = type>>8;  xtype = type&0x3F; }
-
-  while (1) {
-    if (new) {                                                /* find file */
-      new = 0;
-      strcpy(fname, root);
-      for (i=0; i<depth && strlen(fname)<256; i++)
-        sprintf(fname+strlen(fname), "\\%s", f[i].cFileName);
-      if (path)
-        strcpy(path, fname);
-      sprintf(fname+strlen(fname), "\\%s", spec);
-      h[depth] = INVALID_HANDLE_VALUE;
-      f[depth].dwFileAttributes = 0x3F;
-      if ((h[depth]=FindFirstFile(fname, &f[depth]))!=INVALID_HANDLE_VALUE)
-          do {
-        if (!((f[depth].dwFileAttributes&atype)^xtype) &&
-            strcmp(f[depth].cFileName, ".")) {
-          if (multi) {
-            temp = strrchr(f[depth].cFileName, '.');
-            if (temp)  temp++;
-            for (i=0; i<multi && temp; i++)
-              if (!stricmp(temp, spec+i*4+4))
-                found = 1; }
-          else
-            found = 1; }
-        if (found) {
-          if (find)
-            memcpy(find, &f[depth], sizeof(WIN32_FIND_DATA));
-          if (path && !find)
-            sprintf(path+strlen(path), "\\%s", f[depth].cFileName);
-          return(0); } }
-      while (FindNextFile(h[depth], &f[depth]));
-      if (h[depth]!=INVALID_HANDLE_VALUE)
-        FindClose(h[depth]); }
-    else {
-      while (FindNextFile(h[depth], &f[depth])) {
-        if (!((f[depth].dwFileAttributes&atype)^xtype) &&
-            strcmp(f[depth].cFileName, ".")) {
-          if (multi) {
-            temp = strrchr(f[depth].cFileName, '.');
-            if (temp)  temp++;
-            for (i=0; i<multi && temp; i++)
-              if (!stricmp(temp, spec+i*4+4))
-                found = 1; }
-          else
-            found = 1; }
-        if (found) {
-          if (find)
-            memcpy(find, &f[depth], sizeof(WIN32_FIND_DATA));
-          if (path) {
-            sprintf(path, "%s", root);
-            for (i=0; i<depth && strlen(fname)<256; i++)
-              sprintf(path+strlen(path), "\\%s", f[i].cFileName); }
-          if (path && !find)
-            sprintf(path+strlen(path), "\\%s", f[depth].cFileName);
-          return(0); } }
-      if (h[depth]!=INVALID_HANDLE_VALUE)
-        FindClose(h[depth]); }
-    if (!rec)  return(1);                              /* find directories */
-    sprintf(fname, "%s\\", root);
-    for (i=0; i<depth && strlen(fname)<256; i++)
-      sprintf(fname+strlen(fname), "%s\\", f[i].cFileName);
-    if (rec==2)  strcat(fname, spec);
-    else         strcat(fname, "*.*");
-    if (depth<maxrecursedepth) {
-      h[depth] = INVALID_HANDLE_VALUE;
-      f[depth].dwFileAttributes = 0x10;
-      if ((h[depth]=FindFirstFile(fname, &f[depth]))!=INVALID_HANDLE_VALUE)
-          do
-        if ((f[depth].dwFileAttributes&0x10) && strcmp(f[depth].cFileName,
-            ".") && strcmp(f[depth].cFileName, "..")) {
-          depth++;  new = 1;  break; }
-      while (FindNextFile(h[depth], &f[depth]));
-      if (h[depth]!=INVALID_HANDLE_VALUE && !new)
-        FindClose(h[depth]); }
-    while (!new) {
-      if (!depth) return(1);
-      depth--;
-      while (FindNextFile(h[depth], &f[depth]))
-        if ((f[depth].dwFileAttributes&0x10) && strcmp(f[depth].cFileName,
-            ".") && strcmp(f[depth].cFileName, "..")) {
-          depth++;  new = 1;  break; }
-      if (h[depth]!=INVALID_HANDLE_VALUE && !new)
-        FindClose(h[depth]); } }
 }
 
 char *find_space(char *text)
@@ -668,8 +511,6 @@ VOID CALLBACK hide_splash(HWND hwnd, ulong msg, ulong id, long time)
 /* Destroy the splash screen window.
  * Enter: HWND hwnd, ulong msg, id, time: ignored.             11/5/97-DWM */
 {
-  HDC hdc;
-
   KillTimer(HwndSplash, 5);
   if (HwndSplash) {
     free2(lock2(SplashBMP));
@@ -679,7 +520,7 @@ VOID CALLBACK hide_splash(HWND hwnd, ulong msg, ulong id, long time)
     HwndSplash = 0; }
 }
 
-join_names(char *text)
+void join_names(char *text)
 /* Combine a directory and a file name which are separated by a space.
  *  Either portion may be surrounded by quotes, in which case the final part
  *  will have quotes.
@@ -692,7 +533,7 @@ join_names(char *text)
     if (text[0]=='"' && loc[1]=='"') {
       loc[-1] = '\\';  memmove(loc, loc+2, strlen(loc+1)); }
     else if (text[0]=='"') {
-      if (!(loc2=find_space(loc+1)))  loc2 = strlen(loc+1);
+      if (!(loc2=find_space(loc+1)))  loc2 = loc + strlen(loc+1);
       loc[-1] = '\\';  memmove(loc, loc+1, loc2-loc-1);  loc2[-1] = '"'; }
     else if (loc[1]=='"') {
       memmove(text+1, text, loc-text);
@@ -701,7 +542,7 @@ join_names(char *text)
       loc[0] = '\\'; }
 }
 
-new_window()
+void new_window(void)
 /* Open a new window.  The actual work is done by open_window_mid() and
  *  new_window_mid().                                          6/18/97-DWM */
 {
@@ -709,7 +550,7 @@ new_window()
   open_window_mid();
 }
 
-open_ov(FILE *fptr, DATA *data)
+long open_ov(FILE *fptr, DATA *data)
 /* Read in an OV file.  This is an OV header, followed by a complete ORB
  *  file, including header, followed by OV specific data.  This routine does
  *  not close the file.
@@ -768,7 +609,10 @@ open_ov(FILE *fptr, DATA *data)
   data->mol.orb = orb;  data->mol.ls = ls;
   fread(data->mol.orb, sizeof(OATOM), data->mol.nump, fptr);
   if (data->mol.numl)     fread(data->mol.ls, sizeof(LIGHT), data->mol.numl, fptr);
-  data->asym.xyz = data->asym.elem = data->asym.scrxyz = data->asym.norm = 0;
+  data->asym.xyz = 0;
+  data->asym.elem = 0;
+  data->asym.scrxyz = 0;
+  data->asym.norm = 0;
   data->asym.enorm = 0;
   if (data->asym.n)       data->asym.xyz = malloc2(sizeof(float)*3*data->asym.n);
   if (data->asym.xyz)     fread(data->asym.xyz, sizeof(float)*3, data->asym.n, fptr);
@@ -783,8 +627,13 @@ open_ov(FILE *fptr, DATA *data)
   if (!data->asym.xyz || !data->asym.elem) {
     free2(data->asym.xyz);  free2(data->asym.elem);
     data->asym.n = data->asym.e = 0; }
-  data->poly.xyz = data->poly.elem = data->poly.scrxyz = data->poly.norm = 0;
-  data->poly.enorm = data->poly.phase = data->poly.ptphase = 0;
+  data->poly.xyz = 0;
+  data->poly.elem = 0;
+  data->poly.scrxyz = 0;
+  data->poly.norm = 0;
+  data->poly.enorm = 0;
+  data->poly.phase = 0;
+  data->poly.ptphase = 0;
   if (data->poly.n)       data->poly.xyz = malloc2(sizeof(float)*3*data->poly.n);
   if (data->poly.xyz)     fread(data->poly.xyz, sizeof(float)*3, data->poly.n, fptr);
   if (data->poly.e)       data->poly.elem = malloc2(sizeof(long)*3*data->poly.e);
@@ -804,7 +653,9 @@ open_ov(FILE *fptr, DATA *data)
     free2(data->poly.xyz);      free2(data->poly.elem);
     free2(data->poly.ptphase);  free2(data->poly.phase);
     data->poly.n = data->poly.e = 0; }
-  data->points.scrxyz = data->points.xyz = data->points.phase = 0;
+  data->points.scrxyz = 0;
+  data->points.xyz = 0;
+  data->points.phase = 0;
   if (data->points.n)     data->points.xyz = malloc2(sizeof(float)*3*data->points.n);
   if (data->points.xyz)   fread(data->points.xyz, sizeof(float)*3, data->points.n, fptr);
   if (data->points.n)     data->points.phase = malloc2(data->points.n);
@@ -823,7 +674,7 @@ open_ov(FILE *fptr, DATA *data)
   return(0);
 }
 
-open_window()
+void open_window(void)
 /* Open a new file.                                             3/23/97-DWM */
 {
   long len, i, j;
@@ -845,7 +696,7 @@ open_window()
   memset(OpenName, 0xFF, NAMELEN);
   OpenName[0] = 0;
   if (!GetOpenFileName(&openfile))
-    return(0);
+    return;
   FilterType[0] = openfile.nFilterIndex;
   for (i=len=j=0; i<NAMELEN; i++)
     if (OpenName[i]) { if (len>j)  j = len;  len = 0; }
@@ -863,7 +714,7 @@ open_window()
   open_window_mid();
 }
 
-open_window_mid()
+void open_window_mid(void)
 /* Open the file(s) specified in the OpenName array.  If the OpenName array
  *  is the null string, open a new window.                     2/12/97-DWM */
 {
@@ -885,7 +736,7 @@ open_window_mid()
     if (!(fptr=fopen(name, "rb"))) {
       sprintf(text, "Can't open file %s.", name);
       error(Hwnd, text);
-      return(0); }
+      return; }
     memset(buf, 0, 51);
     fread(buf, 1, 50, fptr);
     rewind(fptr);
@@ -895,16 +746,16 @@ open_window_mid()
     /** Check for additional types here **/
     if (type==-1) {
       error(Hwnd, "Can't identify file format.");
-      fclose(fptr);  return(0); } }
+      fclose(fptr);  return; } }
   else {
     sprintf(name, "Untitled %d", untitled);
     untitled++; }
-  if (hwnd=SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0)) {
+  if (hwnd=(HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0)) {
     if (IsZoomed(hwnd))        Pref.flags |= 2;
     else if (!IsIconic(hwnd))  Pref.flags &= 0xFFFFFFFD; }
   if (!(data=malloc2(sizeof(DATA)))) {
     error(Hwnd, "Low memory.\n\nCan't open window.");
-    if (OpenName[0])  fclose(fptr);  return(0); }
+    if (OpenName[0])  fclose(fptr);  return; }
   memset(data, 0, sizeof(DATA));
   for (i=0; i<strlen(name); i++)
     if (name[i]==toupper(name[i])) break;
@@ -919,7 +770,7 @@ open_window_mid()
   m.x = m.y = m.cx = m.cy = CW_USEDEFAULT;
   m.style = (WS_MAXIMIZE*((Pref.flags&2)!=0));
   m.lParam = 0;
-  hwnd = SendMessage(HwndC, WM_MDICREATE, 0, (long)(&m));
+  hwnd = (HWND)SendMessage(HwndC, WM_MDICREATE, 0, (long)(&m));
   hnd = unlock2(data);
   SetWindowLong(hwnd, GWL_USERDATA, (long)hnd);
   ShowWindow(hwnd, SW_SHOW);
@@ -953,7 +804,7 @@ open_window_mid()
       case 2: error(Hwnd, "Couldn't read file."); break;
       case 3: error(Hwnd, "Function not implemented."); }
     SendMessage(HwndC, WM_MDIDESTROY, (long)(hwnd), 0);
-    return(0); }
+    return; }
   if (OpenName[0]) {
     if (!strchr(name, '\\')) {
       getcwd(text, NAMELEN-1);
@@ -968,7 +819,7 @@ open_window_mid()
     memmove(lastview+256, lastview, 256*i);
     strcpy(lastview, name); }
   status(0);
-  SetTimer(hwnd, 1, 0, timer);
+  SetTimer(hwnd, 1, 0, (TIMERPROC)timer);
   if (OpenName[0]) {
     if (find_space(OpenName)) {
       strcpy(name, find_space(OpenName)+1);
@@ -982,11 +833,10 @@ BOOL CALLBACK preferences_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
  *        long msg: message to process.
  *        WPARAM wp, LPARAM lp: parameters for message.         1/8/98-DWM */
 {
-  HWND hwnd;
   DATA *data;
   char text[80], text2[80];
   double x2;
-  long ru, i, j, init=0;
+  long ru, i, init=0;
 
   switch (msg) {
     case WM_COMMAND: switch (wp&0xFFFF) {
@@ -1069,11 +919,11 @@ BOOL CALLBACK preferences_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   return(0);
 }
 
-read_ini()
+void read_ini(void)
 /* Locate and read in values from the INI file.                5/26/96-DWM */
 {
-  char cmd[MAX_PATH+2], text[256], text2[32], *t2;
-  long i, j, k, def, def2, numt=0, buf[5];
+  char cmd[MAX_PATH+2], text[256], *t2;
+  long i, j, k, def, def2, numt=0;
 
   memset(cmd, 0, MAX_PATH+2);
   GetModuleFileName(0, cmd, MAX_PATH+1);
@@ -1140,7 +990,7 @@ read_ini()
   read_ini_toolbar(numt-(!numt));
 }
 
-read_ini_defaults()
+void read_ini_defaults(void)
 /* Setup the global Pref structure to the default values.       1/9/98-DWM */
 {
   long i;
@@ -1154,7 +1004,7 @@ read_ini_defaults()
     Pref.colors[i] = -1;
 }
 
-read_ini_toolbar(long num)
+void read_ini_toolbar(long num)
 /* Read in a customized toolbar.
  * Enter: long num: number of toolbar entries to setup function (no reading
  *                  is done), or zero to actually read ini file.
@@ -1164,10 +1014,10 @@ read_ini_toolbar(long num)
   long i, j, k, l;
   static long numt=0;
 
-  if (num!=0) { numt = num;  return(0); }
-  if (numt<=0)  return(0);
+  if (num!=0) { numt = num;  return; }
+  if (numt<=0)  return;
   if (ToolCustom)  free2(ToolCustom);
-  if (!(ToolCustom=malloc2((numt+1)*sizeof(long))))  return(0);
+  if (!(ToolCustom=malloc2((numt+1)*sizeof(long))))  return;
   memset(ToolCustom, 0, (numt+1)*sizeof(long));
   for (i=l=0; l<numt; l++) {
     sprintf(text2, "ToolBar%d", l);
@@ -1189,7 +1039,7 @@ read_ini_toolbar(long num)
   if (!i)  { if (ToolCustom)  free2(ToolCustom);  ToolCustom = 0; }
 }
 
-recheck(HWND hwnd, long refresh)
+void recheck(HWND hwnd, long refresh)
 /* Refresh all menu check marks to ensure that they are correct.
  * Enter: HWND hwnd: handle of window.  0 for no window.
  *        long refresh: 1 to redraw window afterwards.         5/26/96-DWM */
@@ -1235,7 +1085,7 @@ recheck(HWND hwnd, long refresh)
       AppendMenu(sub, MF_STRING, MenuLastView+i, text); }
 }
 
-remove_quotes(char *text)
+void remove_quotes(char *text)
 /* If a text string is surrounded by quotes, they are removed.  The string
  *  is first limited to the text before the first space outside of quotes.
  * Enter: char *text: text string to modify.                   11/9/96-DWM */
@@ -1252,7 +1102,7 @@ remove_quotes(char *text)
     text[strlen(text)-1] = 0; }
 }
 
-save_avi(DATA *data)
+long save_avi(DATA *data)
 /* Save the rendered picture by appending it to an AVI file.  The filename is
  *  in OpenName.
  * Enter: DATA *data: pointer to window data.
@@ -1391,7 +1241,7 @@ BOOL CALLBACK save_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   return(0);
 }
 
-save_graphic(DATA *data, long type)
+long save_graphic(DATA *data, long type)
 /* Save the rendered picture as a graphics file.  The filename is in
  *  OpenName.
  * Enter: DATA *data: pointer to window data.
@@ -1430,7 +1280,7 @@ save_graphic(DATA *data, long type)
   return(0);
 }
 
-save_orb(DATA *data)
+long save_orb(DATA *data)
 /* Save the current orbital as a specification file.  The file name is in
  *  OpenName.
  * The file format starts with the header "OrbitalFileV1.0".  This is
@@ -1440,7 +1290,6 @@ save_orb(DATA *data)
  * Exit:  long error: 0 for okay, 1 for insufficient memory, 2 for write
  *                    error.                                    1/9/98-DWM */
 {
-  char *text, *dif;
   FILE *fptr;
 
   if (!(fptr=fopen(OpenName, "wt")))  return(2);
@@ -1449,7 +1298,7 @@ save_orb(DATA *data)
   return(0);
 }
 
-save_orb_write(DATA *data, FILE *fptr, long mode)
+void save_orb_write(DATA *data, FILE *fptr, long mode)
 /* Write an orbital specification to a file.
  * The type variable contains: 0-none, 1-text, 2-lval with decimal, 3-rval,
  *  4-lval with hex, 5-lval with phrase, 6-lval with char.
@@ -1650,7 +1499,7 @@ save_orb_write(DATA *data, FILE *fptr, long mode)
       case 6: fprintf(fptr, "%s%-20s %c\n", sp, key, lval); } }
 }
 
-save_ov(DATA *data)
+long save_ov(DATA *data)
 /* Save the current orbital as a complete orbital viewer file.  The file name
  *  is in OpenName.
  * This is the header "OrbitalViewerFileV1.0", followed by the exact same
@@ -1666,7 +1515,7 @@ save_ov(DATA *data)
  *                    error.                                    1/9/98-DWM */
 {
   FILE *fptr;
-  long m1=-1, header[2], hptr;
+  long m1=-1, header[2];
 
   if (!(fptr=fopen(OpenName, "wt")))  return(2);
   fprintf(fptr, "%s\n", OrbCheck2);
@@ -1720,7 +1569,7 @@ save_ov(DATA *data)
   return(0);
 }
 
-save_window(HWND hwnd, long saveas)
+long save_window(HWND hwnd, long saveas)
 /* Save the data in the specified window.  If there is currently no filename,
  *  get one.
  * Enter: HWND hwnd: handle of window to save.  Null to save the topmost
@@ -1730,12 +1579,12 @@ save_window(HWND hwnd, long saveas)
 {
   DATA *data;
   long i, len, err=3, type;
-  char dir[DIRLEN], name[NAMELEN], orig[NAMELEN], text[100];
+  char dir[DIRLEN], name[NAMELEN], orig[NAMELEN];
   long out[]={FileOrb, FileOV, FilePPM, FileTIF, FileBMP, FileVRML,
               FileDigistar, -1};
 
   if (!hwnd)
-    hwnd = SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
+    hwnd = (HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
   if (!hwnd)  return(0);
   Busy+=10;
   data = lock_window(hwnd);
@@ -1756,7 +1605,7 @@ save_window(HWND hwnd, long saveas)
   openfile.lpstrFileTitle = openfile.lpstrCustomFilter = 0;
   openfile.lpstrInitialDir = OpenDir+DIRLEN;
   openfile.lpstrTitle = 0;
-  openfile.lpfnHook = save_dialog;
+  openfile.lpfnHook = (DLGPROC)save_dialog;
   openfile.Flags = OFN_ENABLEHOOK|OFN_HIDEREADONLY|OFN_PATHMUSTEXIST|
                    OFN_EXPLORER|(OFN_OVERWRITEPROMPT*Pref.warn);
   memset(OpenName, 0xFF, NAMELEN);
@@ -1786,8 +1635,8 @@ save_window(HWND hwnd, long saveas)
   FilterType[1] = openfile.nFilterIndex;
   if (strchr(OpenName, '\\'))
     strpath(OpenDir+DIRLEN, OpenName);
-  if (type==FileOrb || type==FileOV)  strcpy(data->name, OpenName);
   type = out[FilterType[1]-1];
+  if (type==FileOrb || type==FileOV)  strcpy(data->name, OpenName);
   cursor(1);
   switch (type) {
     case FileOrb: err = save_orb(data); break;
@@ -1828,7 +1677,7 @@ save_window(HWND hwnd, long saveas)
   return(1);
 }
 
-sequence_browse(HWND hdlg)
+void sequence_browse(HWND hdlg)
 /* Obtain the base file name for sequence output.  This is stored in the
  *  appropriate spot in the dialog.
  * Enter: HWND hdlg: handle of dialog.                         1/13/98-DWM */
@@ -1856,7 +1705,7 @@ sequence_browse(HWND hdlg)
   OpenName[0] = 0;
   GetDlgItemText(hdlg, SeqBase, OpenName, NAMELEN-1);
   if (!GetSaveFileName(&openfile)) {
-    Busy -=10;  return(0); }
+    Busy -=10;  return; }
   name = OpenName;
   if (strchr(OpenName, '\\'))  name = strrchr(OpenName, '\\');
   if (strchr(name, '.'))       strchr(name, '.')[0] = 0;
@@ -1916,41 +1765,39 @@ DATA *sequence_file(HWND hdlg, DATA *seq)
   return(new);
 }
 
-set_default()
+void set_default(void)
 /* Set the current orbital as the default orbital.             1/11/98-DWM */
 {
   HWND hwnd;
   DATA *data;
 
-  if (!(hwnd=SendMessage(HwndC,WM_MDIGETACTIVE,0,0))) return(0);
-  if (!(data=lock_window(hwnd)))  return(0);
+  if (!(hwnd=(HWND)SendMessage(HwndC,WM_MDIGETACTIVE,0,0))) return;
+  if (!(data=lock_window(hwnd)))  return;
   strcpy(OpenName, DefFile);
   if (save_orb(data))
     error(hwnd, "Can't create default file.");
   else
     Pref.flags |= 1;
   unlock_window(data);
-  if (!Pref.warn)  return(0);
+  if (!Pref.warn)  return;
   Busy += 10;
   MsgBox(hwnd, "The default orbital has been set.", "Set Default", MB_OK);
   Busy -= 10;
 }
 
-setup()
+void setup(void)
 /* Configure the window to match the current user settings, which may have
  *  changed.  This adjusts the status bar and the tool bar.     2/5/97-DWM */
 {
-  RECT rect, rect2, rect3;
   FARPROC create;
   TBBUTTON *but;
-  TBSAVEPARAMS tbs;
   long i, j, numbut, numtool, *toolinit=ToolInit;
   long partlist[]={1, 130, 200, -1};
 
   if (Pref.status && !HwndStat) {
     create = GetProcAddress(hcom, "CreateStatusWindow");
-    HwndStat = (*create)(WS_CHILD|WS_VISIBLE|CCS_BOTTOM|SBARS_SIZEGRIP, "",
-                         Hwnd, StatWindow);
+    HwndStat = (HWND)(*create)(WS_CHILD|WS_VISIBLE|CCS_BOTTOM|SBARS_SIZEGRIP,
+                               "", Hwnd, StatWindow);
     SendMessage(HwndStat, SB_SETPARTS, 4, (LPARAM)partlist); }
   if (!Pref.status && HwndStat) {
     DestroyWindow(HwndStat);  HwndStat = 0; }
@@ -1972,7 +1819,7 @@ setup()
                 break;
         memcpy(but+i, ToolList+j, sizeof(TBBUTTON)); }
     create = GetProcAddress(hcom, "CreateToolbarEx");
-    HwndTool = (*create)(Hwnd, WS_CHILD|CCS_ADJUSTABLE|TBSTYLE_ALTDRAG|
+    HwndTool = (HWND)(*create)(Hwnd, WS_CHILD|CCS_ADJUSTABLE|TBSTYLE_ALTDRAG|
             TBSTYLE_WRAPABLE|TBSTYLE_TOOLTIPS|WS_VISIBLE, ToolWindow, numbut,
             hinst, TOOLBMP, but, numtool, 0, 0, 16, 16, sizeof(TBBUTTON));
     free2(but); }
@@ -1983,7 +1830,7 @@ setup()
   recheck(Hwnd, 0);
 }
 
-show_splash()
+void show_splash(void)
 /* Open a small window in the center of the screen and show the splash
  *  message.                                                   11/5/97-DWM */
 {
@@ -2006,7 +1853,8 @@ show_splash()
     hbmp = LoadBMP(&gv);
     if (hbmp) {
       w = gv.width;  h = gv.height;
-      hdlg = CreateDialog(hinst, SplashDLG, HWND_DESKTOP, splash_dialog);
+      hdlg = CreateDialog(hinst, MAKEINTRESOURCE(SplashDLG), HWND_DESKTOP,
+                          (DLGPROC)splash_dialog);
       SetWindowPos(hdlg, HWND_TOPMOST, (x-w-fw)/2, (y-h-fw)/2, w+fw, h+fw,
                    SWP_NOACTIVATE);
       hdc = GetDC(hdlg);
@@ -2023,7 +1871,7 @@ show_splash()
       HwndSplash = hdlg;
       SplashBMP = hbmp;
       UpdateWindow(hdlg);
-      SetTimer(HwndSplash, 5, 5000, hide_splash); } }
+      SetTimer(HwndSplash, 5, 5000, (TIMERPROC)hide_splash); } }
   memset(&gv, 0, sizeof(GV));                /* Decompress preview picture */
   name[0] = 0;
   ((long *)(name+1))[0]=(long)(PreviewPic+1);
@@ -2056,7 +1904,7 @@ BOOL CALLBACK splash_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   return(0);
 }
 
-status(char *text)
+void status(char *text)
 /* Set the text of the status bar.
  * Enter: char *text: text to set.  Null to clear bar.         2/12/97-DWM */
 {
@@ -2065,7 +1913,7 @@ status(char *text)
     else       SendMessage(HwndStat, SB_SETTEXT, 3, (LPARAM)""); }
 }
 
-stereo_image(HWND hdlg, STEREO *stereo, long *replace)
+void stereo_image(HWND hdlg, STEREO *stereo, long *replace)
 /* Obtain an image for use with stereograms.
  * Enter: HWND hdlg: handle of dialog.
  *        STEREO *stereo: pointer to structure to store name, picture.
@@ -2093,7 +1941,7 @@ stereo_image(HWND hdlg, STEREO *stereo, long *replace)
   if (!GetOpenFileName(&openfile)) {
     if (!stereo->name[0])
       SendDlgItemMessage(hdlg, SterImage, BM_SETCHECK, 0, 0);
-    return(0); }
+    return; }
   FilterType[2] = openfile.nFilterIndex;
   if (strchr(OpenName, '\\'))
     strpath(OpenDir+DIRLEN*2, OpenName);
@@ -2103,7 +1951,7 @@ stereo_image(HWND hdlg, STEREO *stereo, long *replace)
     error(hdlg, "The file is not a recognized graphics format.");
     if (!stereo->name[0])
       SendDlgItemMessage(hdlg, SterImage, BM_SETCHECK, 0, 0);
-    return(0); }
+    return; }
   if (replace[0]) {
     free2(stereo->image);
     stereo->image = 0; }
@@ -2116,7 +1964,7 @@ stereo_image(HWND hdlg, STEREO *stereo, long *replace)
   SetDlgItemText(hdlg, SterImageName, stereo->name);
 }
 
-strpath(char *dest, char *src)
+void strpath(char *dest, char *src)
 /* If the source is different from the destination, copy the source to the
  *  destination.  Then, remove the trailing filename from the destination.
  *  This works properly for the c:\ type condition.
@@ -2144,12 +1992,11 @@ long windows_file(char *name)
   return(SearchPath(0, name, 0, 255, path, &cmd));
 }
 
-write_ini()
+void write_ini(void)
 /* Write values to the INI file.                               5/26/96-DWM */
 {
   long i, j, numt;
   char *text, text2[32], t2[256], *alt;
-  RECT rect;
   TBBUTTON tb;
 
   if (HwndTool) {
@@ -2210,7 +2057,7 @@ write_ini()
   write_ini_toolbar(numt);
 }
 
-write_ini_toolbar(long numt)
+void write_ini_toolbar(long numt)
 /* Write the current toolbar configuration to the ini file.
  * Enter: long numt: number of items in toolbar, including separators.
  *                                                            12/10/97-DWM */
@@ -2218,7 +2065,7 @@ write_ini_toolbar(long numt)
   long i, j;
   char text2[32], t2[256];
 
-  if (!HwndTool || !ToolCustom)  return(0);
+  if (!HwndTool || !ToolCustom)  return;
   for (i=0; i<numt; i++) {
     sprintf(text2, "ToolBar%d", i);
     if (ToolCustom[i]<0)  strcpy(t2, "---");

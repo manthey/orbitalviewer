@@ -24,7 +24,7 @@ dlt.obj: dlt.c dlt.h matrix.h
 	cl /c /Za $(CL_OPTS) dlt.c
 draw.obj: draw.c draw.h orb.h ov.h ovrc.h preview.h
 	cl /c $(CL_OPTS) draw.c
-file.obj: file.c common.c orb.h ov.h ovrc.h
+file.obj: file.c common.c file.h draw.h orb.h ov.h ovrc.h
 	cl /c $(CL_OPTS) file.c
 matrix.obj: matrix.c matrix.h
 	cl /c /Za $(CL_OPTS) matrix.c
@@ -32,7 +32,7 @@ orbansi.obj: orb.c orb.h
 	cl /c /Za /DANSIC=true $(CL_OPTS) /Foorbansi.obj orb.c
 orb.obj: orb.c orb.h
 	cl /c $(CL_OPTS) orb.c
-ov.obj: ov.c orb.h ov.h ovrc.h data.h draw.h
+ov.obj: ov.c file.h orb.h ov.h ovrc.h data.h draw.h
 	cl /c $(CL_OPTS) ov.c
 ov.res: ov.rc ovrc.h u\tools.bmp
 	rc $(RC_OPTS) ov.rc
