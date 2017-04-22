@@ -1,0 +1,81 @@
+OrbitalFileV1.0
+DefaultPerspective                     25
+UseQuickRender       Yes
+QuickRenderMode      Polygons
+RenderMode           Raytrace
+FixedSize            No
+FileName             "Untitled 1"
+Scale(m)               2.85755707985e-009
+Perspective                            25
+LastWidth                             640
+LastHeight                            483
+CameraCenterX(m)                        0
+CameraCenterY(m)                        0
+CameraCenterZ(m)       7.14388974643e-008
+CameraTheta(rad)           -1.36135709286
+CameraPhi(rad)             -1.04719769955
+CameraPsi(rad)             0.907571136951
+CameraCx                          10867.5
+Atom {     # Atom 1
+  n                    4
+  l                    f
+  m                    0
+  Neutrons(N)          0
+  Protons(Z)           1
+  Mass(kg)                   1.6605402e-027
+  }
+Light {     # Light 1
+  PositionX(m)                          -80
+  PositionY(m)                           80
+  PositionZ(m)                           80
+  Intensity                               1
+  Ambience                                1
+  Local                No
+  }
+Psi^2(log10)                           -4
+Cutaway {     # Cutaway 1
+  Type                 None
+  Surface              Yes
+  Invert               No
+  }
+Stereo {
+  Mode                 Monoscopic
+  TopScanline          Left
+  RedSide              Left
+  AutoSeparation       Yes
+  UseImage             No
+  Interocular                           250
+  StereoscopeInter                      800
+  Separation(m)             5.29177249e-010
+  }
+Points {
+  Points               10000
+  }
+Polygons {
+  Density              8
+  Refinement                            1.3
+  PositiveOpacity                         1
+  NegativeOpacity                         1
+  Style                Solid
+  }
+Asymptotes {
+  Density              0
+  Opacity                                 0
+  Style                Solid
+  }
+Raytrace {
+  PosProbOpacity                          0
+  PosSurfaceOpacity                       1
+  PosInteriorOpacity                      0
+  NegProbOpacity                          0
+  NegSurfaceOpacity                       1
+  NegInteriorOpacity                      0
+  AsymptoteOpacity                        0
+  PositiveRefraction                      1
+  NegativeRefraction                      1
+  AsymptoteRefraction                     1
+  Steps                1000
+  AutoBrightness       No
+  Coarse               Yes
+  Antialias            Yes
+  }

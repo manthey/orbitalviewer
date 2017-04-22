@@ -1,5 +1,5 @@
 /* This contains all file access functions, preference functions, and
-/*  clipboard functions for the Orbital Viewer program.         1/3/98-DWM */
+ *  clipboard functions for the Orbital Viewer program.         1/3/98-DWM */
 
 #include <windows.h>
 #include <commctrl.h>
@@ -1072,20 +1072,21 @@ BOOL CALLBACK preferences_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
 read_ini()
 /* Locate and read in values from the INI file.                5/26/96-DWM */
 {
-  char *cmd, text[256], text2[32], *t2;
+  char cmd[MAX_PATH+2], text[256], text2[32], *t2;
   long i, j, k, def, def2, numt=0, buf[5];
 
+  memset(cmd, 0, MAX_PATH+2);
+  GetModuleFileName(0, cmd, MAX_PATH+1);
+  if (strlen(cmd)<MAX_PATH) {
+    strcpy(inifile, cmd);
+    remove_quotes(inifile);
+    if (strchr(inifile, '\\'))  strrchr(inifile, '\\')[0] = 0;
+    sprintf(DefFile, "%s\\default.orb", inifile);
+    strcat(inifile, "\\ov.ini"); }
   WinPlace.length = 0;
   read_ini_defaults();
   OpenDir[0] = OpenDir[DIRLEN] = OpenDir[DIRLEN*2] = OpenDir[DIRLEN*3] = 0;
   OpenDir[DIRLEN*4] = OpenDir[DIRLEN*5] = OpenDir[DIRLEN*6] = 0;
-  cmd = GetCommandLine();
-  if (strlen(cmd)<256) {
-    strcpy(inifile, cmd);
-    remove_quotes(inifile);
-    if (strchr(inifile, '\\'))  strrchr(inifile, '\\')[0] = 0;
-    sprintf(DefFile, "%s\\DEFAULT.ORB", inifile);
-    strcat(inifile, "\\OV.INI"); }
   for (i=0; key[i*3]; i++) {
     GetPrivateProfileString(inihead[0],key[i*3],key[i*3+1],text,256,inifile);
     def = 1-(!strcmpi(text, key[i*3+1]));
