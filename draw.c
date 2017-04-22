@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <mem.h>
 #include "matrix.h"
 #include "dlt.h"
 #include "draw.h"
@@ -1082,7 +1083,7 @@ void reframe_geo(void)
   if (!data)  return;
   if (!data->mol.maxcheck) {
     unlock_window(data);
-    error("Atom has not been computed yet.");  return; }
+    error(hwnd, "Atom has not been computed yet.");  return; }
   DefSize = data->mol.maxcheck;
   dx0[3] = 2*data->mol.maxcheck;
   render_move(0, 0, dx0, 0, 0, data->renderval, data->renderdlt,

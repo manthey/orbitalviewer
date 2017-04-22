@@ -3,4 +3,5 @@
 *.lib
 *.exe
 *.ini
+*.swp
 data.h

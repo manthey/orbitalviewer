@@ -116,6 +116,7 @@ int main(int argc, char *argv[])
     printf("Elapsed time: %4.2f seconds.\n", (float)(clock()-tim)/CLOCKS_PER_SEC);
 }
 
+
 void *malloc2(size_t size)
 /* Call malloc.
  * Enter: size_t size: amount of memory to allocate.

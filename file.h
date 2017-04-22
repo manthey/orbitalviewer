@@ -49,6 +49,27 @@ long   windows_file     (char *name);
 void   write_ini        (void);
 void   write_ini_toolbar(long numt);
 
+void   camera_rotate  (double *renderval, double *renderdlt, double *phys,
+                       long dir);
+long   get_color      (DATA *data, long num);
+double interpolate    (double *val, long *time);
+long   new_window_mid (DATA *data);
+long   open_orb       (FILE *fptr, DATA *data, long noheader);
+void   play_frame     (DATA *data, long frame);
+void   prep_stereo    (DATA *data);
+void   render_dlt     (long numnode, float *node, long w, long h,
+                       float perspec, double *renderval, double *initdlt,
+                       double *findlt);
+void   render_dlt_new (long numnode, float *node, long w, long h,
+                       float perspec, double *renderval, double *findlt);
+void   render_move    (float *dx, float *dang, float *dx0, long w, long h,
+                       double *renderval, double *initdlt, double *findlt);
+void   render_physical(double *val, double *dlt, double *phys, lmatrix *ang);
+long   save_digistar  (DATA *data);
+long   save_vrml      (DATA *data);
+void   save_vrml_color(FILE *fptr, char *text, long clr);
+void   update_process (DATA *data);
+
 extern char OpenName[];
 
 #endif                                    /* End of prevent double inclusion */

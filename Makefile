@@ -8,7 +8,7 @@ all: ansiorb.exe ov.exe
 ansiorb.exe: ansi.obj dlt.obj matrix.obj orbansi.obj
 	link $(LINK_OPTS) /OUT:ansiorb.exe ansi.obj dlt.obj matrix.obj orbansi.obj 
 ov.exe: dlt.obj draw.obj file.obj matrix.obj orb.obj ov.obj ov.res
-	link $(LINK_OPTS) /OUT:ov.exe dlt.obj draw.obj file.obj matrix.obj orb.obj ov.obj ov.res  gvlib.lib  advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32.lib shell32.lib user32.lib
+	link $(LINK_OPTS) /OUT:ov.exe dlt.obj draw.obj file.obj matrix.obj orb.obj ov.obj ov.res  gvlib.lib mem.lib  advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32.lib shell32.lib user32.lib
 
 
 dcpmap.obj: dcpmap.c

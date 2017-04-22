@@ -70,11 +70,14 @@ typedef struct DATA {
  *     9: 0-use screen size, 1-use specified size.
  *    10: 0-not playing a sequence, 1-playing a sequence.                  */
 
+int    main           (int argc, char *argv[]);
+int    save_ppm       (DATA *data, FILE *fptr);
+void   update_geo     (DATA *data);
+
 void   camera_rotate  (double *renderval, double *renderdlt, double *phys,
                        long dir);
 long   get_color      (DATA *data, long num);
 double interpolate    (double *val, long *time);
-int    main           (int argc, char *argv[]);
 long   new_window_mid (DATA *data);
 long   open_orb       (FILE *fptr, DATA *data, long noheader);
 void   play_frame     (DATA *data, long frame);
@@ -87,8 +90,7 @@ void   render_dlt_new (long numnode, float *node, long w, long h,
 void   render_move    (float *dx, float *dang, float *dx0, long w, long h,
                        double *renderval, double *initdlt, double *findlt);
 void   render_physical(double *val, double *dlt, double *phys, lmatrix *ang);
-int    save_ppm       (DATA *data, FILE *fptr);
+long   save_digistar  (DATA *data);
 long   save_vrml      (DATA *data);
 void   save_vrml_color(FILE *fptr, char *text, long clr);
-void   update_geo     (DATA *data);
 void   update_process (DATA *data);

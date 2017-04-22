@@ -97,43 +97,54 @@ typedef struct DATA {
 
 #define debug(x) MessageBox(Hwnd, (x), "--", MB_OK)
 
-BOOL CALLBACK asymptote_dialog   (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
-LRESULT CALLBACK main_loop       (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
-BOOL CALLBACK orbital_dialog     (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
-BOOL CALLBACK point_dialog       (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
-BOOL CALLBACK polygon_dialog     (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
-BOOL CALLBACK progress_dialog    (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
-BOOL CALLBACK render_dialog      (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
-BOOL CALLBACK render_opt_dialog  (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
-BOOL CALLBACK sequence_dialog    (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
-BOOL CALLBACK stereo_dialog      (HWND hdlg,ulong msg,WPARAM wp,LPARAM lp);
-VOID CALLBACK timer              (HWND hwnd,ulong msg,ulong id,long time);
+BOOL CALLBACK about            (HWND hdlg, ulong msg, WPARAM wp, LPARAM lp);
+BOOL CALLBACK asymptote_dialog (HWND hdlg, ulong msg, WPARAM wp, LPARAM lp);
+BOOL CALLBACK camera_dialog    (HWND hdlg, ulong msg, WPARAM wp, LPARAM lp);
+BOOL CALLBACK cutaway_dialog   (HWND hdlg, ulong msg, WPARAM wp, LPARAM lp);
+BOOL CALLBACK light_dialog     (HWND hdlg, ulong msg, WPARAM wp, LPARAM lp);
+LRESULT CALLBACK main_loop     (HWND hdlg, ulong msg, WPARAM wp, LPARAM lp);
+BOOL CALLBACK orbital_dialog   (HWND hdlg, ulong msg, WPARAM wp, LPARAM lp);
+BOOL CALLBACK point_dialog     (HWND hdlg, ulong msg, WPARAM wp, LPARAM lp);
+BOOL CALLBACK polygon_dialog   (HWND hdlg, ulong msg, WPARAM wp, LPARAM lp);
+BOOL CALLBACK progress_dialog  (HWND hdlg, ulong msg, WPARAM wp, LPARAM lp);
+BOOL CALLBACK render_dialog    (HWND hdlg, ulong msg, WPARAM wp, LPARAM lp);
+BOOL CALLBACK render_opt_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp);
+LRESULT CALLBACK second_loop   (HWND hwnd, ulong msg, WPARAM wp, LPARAM lp);
+BOOL CALLBACK sequence_dialog  (HWND hdlg, ulong msg, WPARAM wp, LPARAM lp);
+BOOL CALLBACK stereo_dialog    (HWND hdlg, ulong msg, WPARAM wp, LPARAM lp);
+VOID CALLBACK timer            (HWND hwnd, ulong msg, ulong id, long time);
 
-void     camera_rotate  (double *renderval, double *renderdlt, double *phys,
-                         long dir);
-void     free2          (void *mem);
-double   interpolate    (double *val, long *time);
-DATA    *lock_window    (HANDLE hnd);
-void    *lock2          (HANDLE hmem);
-void     play_frame     (DATA *data, long frame);
-         progress       (HWND hwnd, char *title, char *message, long current,
-                         long maximum);
-real     rnd            (real low, real high, long inc);
-void    *realloc2       (void *current, long size);
-void     render_dlt     (long numnode, float *node, long w, long h,
-                         float perspec, double *renderval, double *initdlt,
-                         double *findlt);
-void     render_dlt_new (long numnode, float *node, long w, long h,
-                         float perspec, double *renderval, double *findlt);
-void     render_move    (float *dx, float *dang, float *dx0, long w, long h,
-                         double *renderval, double *initdlt, double *findlt);
-void     render_physical(double *val, double *dlt, double *phys,
-                         lmatrix *ang);
-void     save_vrml_color(FILE *fptr, char *text, long clr);
-HANDLE   unlock_window  (DATA *data);
-HANDLE   unlock2        (void *mem);
-void     update_process (DATA *data);
-HWND     window_handle  (DATA *data);
+void   advance_orbital(void);
+void   compute_client (HWND hwnd, long w, long h);
+void   cursor         (long shape);
+void   end_avi        (void);
+void   end_common     (void);
+void   end_ctl3d      (void);
+void   error          (HWND hwnd2, char *text);
+void   free_window    (HWND hwnd);
+void   light_read     (HWND hdlg, LIGHT *ls);
+DATA  *lock_window    (HANDLE hnd);
+void   map_dialog_rect(HWND hdlg, long x1, long y1, long x2, long y2,
+                       long *out);
+long   MsgBox         (HWND hwnd, char *text, char *title, ulong style);
+void   next_frame     (DATA *data);
+void   orbital_read   (HWND hdlg, OATOM *orb);
+void   play_frame     (DATA *data, long frame);
+void   pass_arguments (HWND hwnd, char *arg);
+void   process_arguments(void);
+long   progress       (HWND hwnd, char *title, char *message, long current,
+                       long maximum);
+void   quit           (void);
+real   rnd            (real low, real high, long inc);
+void   sequence_stop  (void);
+void   set_window_name(HWND hwnd, DATA *data);
+void   start_avi      (void);
+long   start_common   (void);
+void   start_ctl3d    (void);
+void   test           (char *data);
+HANDLE unlock_window  (DATA *data);
+long   warning        (HWND hwnd2, char *text);
+HWND   window_handle  (DATA *data);
 
 extern char *DistText[], HelpFile[], lastview[], *MassText[], OrbLet[],
        Program[], *RadText[], Untitled[], WinName2[];
@@ -144,8 +155,8 @@ extern HINSTANCE havi, hcom, hinst;
 extern HMENU Hmenu;
 extern HWND Hwnd, HwndC, HwndList[], HwndSplash, HwndStat, HwndTool;
 extern long AVIHeader[], AVILoad, BitsPixel, Busy, CloseMode, EffScale,
-       LockList[], NumLocked, NumWindows, Perspect, PreviewDelay,
-       PreviewPic[], Speed, Splash[], *ToolCustom, ToolInit[];
+       NumWindows, Perspect, PreviewDelay, PreviewPic[], Splash[], *ToolCustom,
+       ToolInit[];
 extern PREF Pref;
 extern real DistVal[], RadVal[];
 extern TBBUTTON ToolList[], ToolSep;

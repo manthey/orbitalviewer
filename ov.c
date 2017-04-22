@@ -8,13 +8,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <gvlib.h>
+#include <mem.h>
 #include "file.h"
 #include "matrix.h"
 #include "ovrc.h"
 #include "ov.h"
 #include "data.h"
 #include "draw.h"
-#include "\p\lib\gvlib.h"
 
 char HelpFile[]="OV.HLP", lastview[1024], Program[]="Orbital Viewer",
      Untitled[]="Untitled", WinName[]="ORBwin", WinName2[]="ORBw2";
@@ -112,7 +113,7 @@ BOOL CALLBACK about(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   return(0);
 }
 
-advance_orbital()
+void advance_orbital(void)
 /* Change the orbital to the next one in a logical sequence.  This also
  *  modifies the Psi^2 setting.                                1/31/98-DWM */
 {
@@ -121,10 +122,10 @@ advance_orbital()
   double tbl[]={1.9,2.7,3.5,4.3,4.9,5.3,5.7,6.1,6.4,6.7,
                 6.9,7.1,7.3,7.5,7.7,7.8,8.0,8.1,8.3,8.4, 8.5};
 
-  if (!(hwnd=SendMessage(HwndC,WM_MDIGETACTIVE,0,0)))  return(0);
-  if (!(data=lock_window(hwnd)))  return(0);
-  if (data->mol.nump!=1) {      unlock_window(data);  return(0); }
-  if (data->mol.orb[0].n>=21) { unlock_window(data);  return(0); }
+  if (!(hwnd=(HWND)SendMessage(HwndC,WM_MDIGETACTIVE,0,0)))  return;
+  if (!(data=lock_window(hwnd)))  return;
+  if (data->mol.nump!=1) {      unlock_window(data);  return; }
+  if (data->mol.orb[0].n>=21) { unlock_window(data);  return; }
   data->mol.orb[0].m++;
   if (data->mol.orb[0].m>data->mol.orb[0].l) {
     data->mol.orb[0].l++;  data->mol.orb[0].m = 0; }
@@ -156,7 +157,7 @@ BOOL CALLBACK asymptote_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   real opac, val;
   char text[80];
 
-  hwnd = SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
+  hwnd = (HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
   switch (msg) {
     case WM_COMMAND: switch (wp&0xFFFF) {
       case AsymAuto: if (!(data=lock_window(hwnd)))  break;
@@ -215,9 +216,9 @@ BOOL CALLBACK asymptote_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
         unlock_window(data); }
       case IDCANCEL: EndDialog(hdlg, 1);  return(1);
       default: return(0); } break;
-    case WM_HSCROLL: scr = GetDlgCtrlID(lp);
-      GetScrollRange(lp, SB_CTL, &x, &y);
-      i = GetScrollPos(lp, SB_CTL);
+    case WM_HSCROLL: scr = GetDlgCtrlID((HWND)lp);
+      GetScrollRange((HWND)lp, SB_CTL, &x, &y);
+      i = GetScrollPos((HWND)lp, SB_CTL);
       switch (wp&0xFFFF) {
         case SB_BOTTOM: i = x; break;
         case SB_LINELEFT: if (i>x) i--; break;
@@ -226,7 +227,7 @@ BOOL CALLBACK asymptote_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
         case SB_PAGERIGHT: i+=2*(1+4*(scr==AsymScr));  if (i>y) i = y; break;
         case SB_THUMBPOSITION: case SB_THUMBTRACK: i = (wp>>16); break;
         case SB_TOP: i = y; }
-      SetScrollPos(lp, SB_CTL, i, 1);
+      SetScrollPos((HWND)lp, SB_CTL, i, 1);
       switch (scr) {
         case AsymScr: sprintf(text, "%d", i);
           SetDlgItemText(hdlg, AsymEdit, text); break;
@@ -263,7 +264,7 @@ BOOL CALLBACK camera_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   DATA *data=DispData;
   char text[80], text2[80];
   static long du, ru, update, init;
-  real val[3], x2;
+  real x2;
   static double phys[10], lastphys[10];
   static real maxc;
   long i;
@@ -383,7 +384,7 @@ BOOL CALLBACK camera_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   return(0);
 }
 
-compute_client(HWND hwnd, long w, long h)
+void compute_client(HWND hwnd, long w, long h)
 /* Adjust the MDI client window to account for the tool and status bars if
  *  they exist.
  * Enter: HWND hwnd: frame window handle.
@@ -414,7 +415,7 @@ compute_client(HWND hwnd, long w, long h)
   InvalidateRect(hwnd, 0, 1);
 }
 
-cursor(long shape)
+void cursor(long shape)
 /* Set the cursor to a specified shape.
  * Enter: long shape: 0 for arrow, 1 for wait, 2 for move, 3 for rotate, 4
  *                    for zoom.                                5/26/96-DWM */
@@ -425,8 +426,8 @@ cursor(long shape)
   switch (shape) {
     case 1:  SetCursor(cur=LoadCursor(0, IDC_WAIT)); break;
     case 2:  SetCursor(cur=LoadCursor(0, IDC_SIZE)); break;
-    case 3:  SetCursor(cur=LoadCursor(hinst, CURSOR1)); break;
-    case 4:  SetCursor(cur=LoadCursor(hinst, CURSOR2)); break;
+    case 3:  SetCursor(cur=LoadCursor(hinst, MAKEINTRESOURCE(CURSOR1))); break;
+    case 4:  SetCursor(cur=LoadCursor(hinst, MAKEINTRESOURCE(CURSOR2))); break;
     default: SetCursor(cur=LoadCursor(0, IDC_ARROW)); }
   if (cur) {
     hwnd = GetForegroundWindow();
@@ -574,35 +575,35 @@ BOOL CALLBACK cutaway_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   return(0);
 }
 
-end_avi()
+void end_avi(void)
 /* Terminate the AVI control functions, if started.            1/22/98-DWM */
 {
-  if (!havi)  return(0);
+  if (!havi)  return;
   FreeLibrary(havi);
   havi = 0;
 }
 
-end_common()
+void end_common(void)
 /* Terminate the common control functions, if started.         1/22/98-DWM */
 {
-  if (!hcom)  return(0);
+  if (!hcom)  return;
   FreeLibrary(hcom);
   havi = 0;
 }
 
-end_ctl3d()
+void end_ctl3d(void)
 /* Terminate the faux-3D control functions, if started.        10/4/96-DWM */
 {
   FARPROC reg;
 
-  if (!hctl3d)  return(0);
+  if (!hctl3d)  return;
   reg = GetProcAddress(hctl3d, "Ctl3dUnregister");
   (*reg)(hinst);
   FreeLibrary(hctl3d);
   hctl3d = 0;
 }
 
-error(HWND hwnd2, char *text)
+void error(HWND hwnd2, char *text)
 /* Report an error, if errors are currently viewed.
  * Enter: HWND hwnd: handle of the window or null to use best-guess top
  *                   window.
@@ -617,7 +618,7 @@ error(HWND hwnd2, char *text)
   if (!hwnd2 && !NumWindows)  hwnd = Hwnd;
   if (hwnd2)  hwnd = hwnd2;
   status(0);
-  if (!Pref.error)  return(0);
+  if (!Pref.error)  return;
   cursor(0);
   Busy += 10;
   if (Pref.error==1 || !HwndStat)
@@ -628,7 +629,7 @@ error(HWND hwnd2, char *text)
   Busy -= 10;
 }
 
-free_window(HWND hwnd)
+void free_window(HWND hwnd)
 /* Free all memory associated with a given window.  This is done just before
  *  closing.
  * Enter: HWND hwnd: handle of window to free.                 2/13/97-DWM */
@@ -636,10 +637,10 @@ free_window(HWND hwnd)
   DATA *data;
   long i;
 
-  if (!hwnd)  return(0);
-  if (!(data=lock_window(hwnd))) return(0);
+  if (!hwnd)  return;
+  if (!(data=lock_window(hwnd))) return;
   for (i=0; i<NumLocked; i++)
-    if (LockList[i*3+1]==data)
+    if (LockList[i*3+1]==(long)data)
       break;
   if (i<NumLocked) {
     memmove(LockList+i*3, LockList+i*3+3, (NumLocked-i-1)*3*sizeof(long));
@@ -657,34 +658,6 @@ free_window(HWND hwnd)
     free2(data->seq[i]); }
   /** Additional data items get freed here **/
   free2(data);
-}
-
-void free2(void *mem)
-/* Actually call free.  Provided for ease and convenience.
- * Enter: void *mem: pointer to memory.                         5/4/96-DWM */
-{
-  long i;
-  HGLOBAL hmem;
-
-  if (!mem)  return;
-  for (i=0; i<mallocnum; i++)
-    if ((long)mem==malloctbl[i*2+1]) {
-      hmem = (HGLOBAL)malloctbl[i*2];
-      GlobalUnlock(hmem);
-      GlobalFree(hmem);
-      memmove(malloctbl+i*2, malloctbl+i*2+2,
-              (mallocnum-i-1)*2*sizeof(long));
-      mallocnum--;
-      return; }
-}
-
-void free2_all(void)
-/* Free all pointers allocated using malloc2.                  2/11/97-DWM */
-{
-  long i;
-
-  for (i=mallocnum-1; i>=0; i--)
-    free2(malloctbl[i*2+1]);
 }
 
 BOOL CALLBACK light_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
@@ -786,9 +759,9 @@ BOOL CALLBACK light_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
           sprintf(text, "%g", ls[cur].x[i]/DistVal[du=Pref.munit]);
           SetDlgItemText(hdlg, LightEditX+i, text); } break;
       default: return(0); } break;
-    case WM_HSCROLL: scr = GetDlgCtrlID(lp);
-      GetScrollRange(lp, SB_CTL, &x, &y);
-      i = GetScrollPos(lp, SB_CTL);
+    case WM_HSCROLL: scr = GetDlgCtrlID((HWND)lp);
+      GetScrollRange((HWND)lp, SB_CTL, &x, &y);
+      i = GetScrollPos((HWND)lp, SB_CTL);
       switch (wp&0xFFFF) {
         case SB_BOTTOM: i = x; break;
         case SB_LINELEFT: if (i>x) i--; break;
@@ -797,7 +770,7 @@ BOOL CALLBACK light_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
         case SB_PAGERIGHT: i += 10; if (i>y) i = y; break;
         case SB_THUMBPOSITION: case SB_THUMBTRACK: i = (wp>>16); break;
         case SB_TOP: i = y; }
-      SetScrollPos(lp, SB_CTL, i, 1);
+      SetScrollPos((HWND)lp, SB_CTL, i, 1);
       sprintf(text, "%3.2f", i*0.01);
       SetDlgItemText(hdlg, scr-1, text); break;
     case WM_INITDIALOG: numl = mol->numl;  cur = last;  listed = -1;
@@ -858,7 +831,7 @@ BOOL CALLBACK light_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   return(0);
 }
 
-light_read(HWND hdlg, LIGHT *ls)
+void light_read(HWND hdlg, LIGHT *ls)
 /* Read in the current settings of the dialog.  This is used when the user
  *  selects done or switches which light or units they are looking at.
  * Enter: HWND hdlg: handle of the dialog.
@@ -895,11 +868,11 @@ DATA *lock_window(HWND hwnd)
 
   if (!hwnd)  return(0);
   for (i=0; i<NumLocked; i++)
-    if (LockList[i*3]==hwnd) {
+    if (LockList[i*3]==(long)hwnd) {
       LockList[i*3+2] ++;
-      return(LockList[i*3+1]); }
+      return((DATA *)LockList[i*3+1]); }
   if (NumLocked==MAXLOCK)  return(0);
-  if (!(hnd=GetWindowLong(hwnd, GWL_USERDATA)))  return(0);
+  if (!(hnd=(HANDLE)GetWindowLong(hwnd, GWL_USERDATA)))  return(0);
   if (!(data=lock2(hnd)))  return(0);
   LockList[NumLocked*3]   = (long)(hwnd);
   LockList[NumLocked*3+1] = (long)(data);
@@ -939,28 +912,6 @@ DATA *lock_window(HWND hwnd)
   return(data);
 }
 
-void *lock2(HANDLE hmem)
-/* Lock down a windows handle so that it can be accessed via pointers and
- *  manipulated with the free2 and realloc2 commands.  This can only fail if
- *  there are too many pointers allocated.
- * Enter: HANDLE hmem: handle to windows memory.
- * Exit:  void *mem: pointer to memory.                        2/11/97-DWM */
-{
-  char *mem;
-  long i;
-
-  if (!hmem)  return(0);
-  for (i=0; i<mallocnum; i++)
-    if ((long)hmem==malloctbl[i*2])
-      return(malloctbl[i*2+1]);
-  if (mallocnum>=NUMMALLOC*2)  return(0);
-  mem = GlobalLock(hmem);
-  malloctbl[mallocnum*2]   = (long)hmem;
-  malloctbl[mallocnum*2+1] = (long)mem;
-  mallocnum++;
-  return(mem);
-}
-
 LRESULT CALLBACK main_loop(HWND hwnd, ulong msg, WPARAM wp, LPARAM lp)
 /* Main processing loop.
  * Enter: HWND hwnd: handle of current window.
@@ -974,9 +925,9 @@ LRESULT CALLBACK main_loop(HWND hwnd, ulong msg, WPARAM wp, LPARAM lp)
 
   switch (msg) {
     case WM_CLOSE: case WM_QUERYENDSESSION: if (NumWindows>1) CloseMode = 1;
-      while (hwnd2=SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0)) {
+      while (hwnd2=(HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0)) {
         SendMessage(hwnd2, WM_CLOSE, 0, 0);
-        if (hwnd2==SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0)) {
+        if (hwnd2==(HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0)) {
           CloseMode = 0;
           return(0); } }
       CloseMode = 0;
@@ -987,23 +938,34 @@ LRESULT CALLBACK main_loop(HWND hwnd, ulong msg, WPARAM wp, LPARAM lp)
         status(text); }
       if (HwndSplash) hide_splash(0,0,0,0);
       switch (wp&0xFFFF) {
-        case MenuAbout: Busy++; DialogBox(hinst,AbDLG,hwnd,about); Busy--;
+        case MenuAbout: Busy++;
+          DialogBox(hinst, MAKEINTRESOURCE(AbDLG), hwnd, (DLGPROC)about);
+          Busy--;
           return(0);
         case MenuAdvance: advance_orbital(); return(0);
         case MenuArrange: SendMessage(HwndC,WM_MDIICONARRANGE,0,0);return(0);
         case MenuAsymOpt: Busy++;
-          DialogBox(hinst, AsymDLG, hwnd, asymptote_dialog); Busy--;
+          DialogBox(hinst, MAKEINTRESOURCE(AsymDLG), hwnd,
+                    (DLGPROC)asymptote_dialog);
+          Busy--;
           return(0);
-        case MenuCamera:  DispHwnd = SendMessage(HwndC,WM_MDIGETACTIVE,0,0);
+        case MenuCamera:
+          DispHwnd = (HWND)SendMessage(HwndC,WM_MDIGETACTIVE,0,0);
           if (!(DispData=lock_window(DispHwnd)))  return(0);
           Busy++;
-          DialogBox(hinst, CamDLG, hwnd, camera_dialog); Busy--;
+          DialogBox(hinst, MAKEINTRESOURCE(CamDLG), hwnd,
+                    (DLGPROC)camera_dialog);
+          Busy--;
           unlock_window(DispData); return(0);
         case MenuCascade: SendMessage(HwndC, WM_MDICASCADE, 0, 0); return(0);
-        case MenuClose: SendMessage(SendMessage(HwndC, WM_MDIGETACTIVE, 0,0),
-                                    WM_CLOSE, 0, 0); return(0);
+        case MenuClose:
+          SendMessage((HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0),
+                      WM_CLOSE, 0, 0);
+          return(0);
         case MenuColors: Busy++;
-          DialogBox(hinst, ColorDLG, hwnd, color_dialog); Busy--; return(0);
+          DialogBox(hinst, MAKEINTRESOURCE(ColorDLG), hwnd,
+                    (DLGPROC)color_dialog);
+          Busy--; return(0);
         case MenuCompAVI: Busy+=10;  compress_avi();  Busy-=10;  return(0);
         case MenuCopy: copy();  return(0);
         case MenuCustom: if (HwndTool)
@@ -1011,10 +973,13 @@ LRESULT CALLBACK main_loop(HWND hwnd, ulong msg, WPARAM wp, LPARAM lp)
           else
             error(hwnd, "Toolbar must be visible to allow customization.");
           return(0);
-        case MenuCutAway:  DispHwnd = SendMessage(HwndC,WM_MDIGETACTIVE,0,0);
+        case MenuCutAway:
+          DispHwnd = (HWND)SendMessage(HwndC,WM_MDIGETACTIVE,0,0);
           if (!(DispData=lock_window(DispHwnd)))  return(0);
           Busy++;
-          DialogBox(hinst, CutDLG, hwnd, cutaway_dialog); Busy--;
+          DialogBox(hinst, MAKEINTRESOURCE(CutDLG), hwnd,
+                    (DLGPROC)cutaway_dialog);
+          Busy--;
           unlock_window(DispData); return(0);
         case MenuDefault: set_default(); return(0);
         case MenuDown: shift_geo(1, Pref.panstep); return(0);
@@ -1029,32 +994,47 @@ LRESULT CALLBACK main_loop(HWND hwnd, ulong msg, WPARAM wp, LPARAM lp)
           sprintf(OpenName,"\"%s\"",lastview+256*((wp&0xFFFF)-MenuLastView));
           open_window_mid(); break;
         case MenuLeft: shift_geo(0, -Pref.panstep); return(0);
-        case MenuLight: DispHwnd = SendMessage(HwndC,WM_MDIGETACTIVE,0,0);
+        case MenuLight:
+          DispHwnd = (HWND)SendMessage(HwndC,WM_MDIGETACTIVE,0,0);
           if (!(DispData=lock_window(DispHwnd)))  return(0);
           Busy++;
-          DialogBox(hinst, LightDLG, hwnd, light_dialog); Busy--;
+          DialogBox(hinst, MAKEINTRESOURCE(LightDLG), hwnd,
+                    (DLGPROC)light_dialog);
+          Busy--;
           unlock_window(DispData); return(0);
         case MenuNew: new_window(); return(0);
         case MenuOpen: open_window(); return(0);
-        case MenuOrb: DispHwnd = SendMessage(HwndC,WM_MDIGETACTIVE,0,0);
+        case MenuOrb: DispHwnd = (HWND)SendMessage(HwndC,WM_MDIGETACTIVE,0,0);
           if (!(DispData=lock_window(DispHwnd)))  return(0);
           Busy++;
-          DialogBox(hinst, OrbDLG, hwnd, orbital_dialog); Busy--;
+          DialogBox(hinst, MAKEINTRESOURCE(OrbDLG), hwnd,
+                    (DLGPROC)orbital_dialog);
+          Busy--;
           unlock_window(DispData); return(0);
         case MenuPointOpt: Busy++;
-          DialogBox(hinst, PointDLG, hwnd, point_dialog); Busy--; return(0);
+          DialogBox(hinst, MAKEINTRESOURCE(PointDLG), hwnd,
+                    (DLGPROC)point_dialog);
+          Busy--; return(0);
         case MenuPolyOpt: Busy++;
-          DialogBox(hinst, PolyDLG, hwnd, polygon_dialog); Busy--; return(0);
+          DialogBox(hinst, MAKEINTRESOURCE(PolyDLG), hwnd,
+                    (DLGPROC)polygon_dialog);
+          Busy--; return(0);
         case MenuPref: Busy++;
-          DialogBox(hinst, PrefDLG, hwnd, preferences_dialog); Busy--;
+          DialogBox(hinst, MAKEINTRESOURCE(PrefDLG), hwnd,
+                    (DLGPROC)preferences_dialog);
+          Busy--;
           return(0);
         case MenuRayOpt: Busy++;
-          DialogBox(hinst, RenderDLG, hwnd, render_opt_dialog); Busy--;
+          DialogBox(hinst, MAKEINTRESOURCE(RenderDLG), hwnd,
+                    (DLGPROC)render_opt_dialog);
+          Busy--;
           return(0);
         case MenuRedirect: process_arguments();  return(0);
         case MenuReframe: reframe_geo();  return(0);
         case MenuRenderOpt: Busy++;
-          DialogBox(hinst, RendDLG, hwnd, render_dialog); Busy--; return(0);
+          DialogBox(hinst, MAKEINTRESOURCE(RendDLG), hwnd,
+                    (DLGPROC)render_dialog);
+          Busy--; return(0);
         case MenuResetPos: reset_geo(); return(0);
         case MenuRight: shift_geo(0, Pref.panstep); return(0);
         case MenuRotXM: rotate_geo(0, -Pref.radstep/deg); return(0);
@@ -1065,15 +1045,21 @@ LRESULT CALLBACK main_loop(HWND hwnd, ulong msg, WPARAM wp, LPARAM lp)
         case MenuRotZP: rotate_geo(2,  Pref.radstep/deg); return(0);
         case MenuSave: save_window(0, 0); return(0);
         case MenuSaveAs: save_window(0, 1); return(0);
-        case MenuSequence: DispHwnd = SendMessage(HwndC,WM_MDIGETACTIVE,0,0);
+        case MenuSequence:
+          DispHwnd = (HWND)SendMessage(HwndC,WM_MDIGETACTIVE,0,0);
           if (!(DispData=lock_window(DispHwnd)))  return(0);
           Busy++;
-          DialogBox(hinst, SeqDLG, hwnd, sequence_dialog); Busy--;
+          DialogBox(hinst, MAKEINTRESOURCE(SeqDLG), hwnd,
+                    (DLGPROC)sequence_dialog);
+          Busy--;
           unlock_window(DispData); return(0);
-        case MenuStereo:  DispHwnd = SendMessage(HwndC,WM_MDIGETACTIVE,0,0);
+        case MenuStereo:
+          DispHwnd = (HWND)SendMessage(HwndC,WM_MDIGETACTIVE,0,0);
           if (!(DispData=lock_window(DispHwnd)))  return(0);
           Busy++;
-          DialogBox(hinst, SterDLG, hwnd, stereo_dialog); Busy--;
+          DialogBox(hinst, MAKEINTRESOURCE(SterDLG), hwnd,
+                    (DLGPROC)stereo_dialog);
+          Busy--;
           unlock_window(DispData); return(0);
         case MenuStop: sequence_stop(); return(0);
         case MenuSwitch: SendMessage(HwndC, WM_MDINEXT, SendMessage(HwndC,
@@ -1083,7 +1069,8 @@ LRESULT CALLBACK main_loop(HWND hwnd, ulong msg, WPARAM wp, LPARAM lp)
         case MenuTile: SendMessage(HwndC, WM_MDITILE, MDITILE_HORIZONTAL|
                                    MDITILE_VERTICAL, 0); return(0);
         case MenuUp: shift_geo(1, -Pref.panstep); return(0);
-        case MenuZoom: if (IsZoomed(SendMessage(HwndC,WM_MDIGETACTIVE,0,0)))
+        case MenuZoom:
+          if (IsZoomed((HWND)SendMessage(HwndC,WM_MDIGETACTIVE,0,0)))
             SendMessage(HwndC, WM_MDIRESTORE, SendMessage(HwndC,
                         WM_MDIGETACTIVE, 0, 0), 0);
           else
@@ -1094,7 +1081,7 @@ LRESULT CALLBACK main_loop(HWND hwnd, ulong msg, WPARAM wp, LPARAM lp)
         case MenuZoomOut: shift_geo(2, -Pref.zoomstep); return(0);
         default: return(DefFrameProc(hwnd, HwndC, msg, wp, lp)); } break;
     case WM_DESTROY: quit(); return(0);
-    case WM_DROPFILES: drop_file(wp); return(0);
+    case WM_DROPFILES: drop_file((HANDLE)wp); return(0);
     case WM_INITMENU: if (HwndSplash) hide_splash(0,0,0,0); break;
     case WM_MDIACTIVATE: case WM_MDICASCADE: case WM_MDICREATE:
     case WM_MDIDESTROY: case WM_MDIGETACTIVE: case WM_MDIICONARRANGE:
@@ -1159,25 +1146,7 @@ LRESULT CALLBACK main_loop(HWND hwnd, ulong msg, WPARAM wp, LPARAM lp)
   return(DefWindowProc(hwnd, msg, wp, lp));
 }
 
-void *malloc2(long size)
-/* Actually call malloc.  Provided for source code compatibility.
- * Enter: long size: number of bytes to allocate.
- * Exit:  void *mem: pointer to memory.                         5/4/96-DWM */
-{
-  HGLOBAL hmem;
-  char *mem;
-
-  if (mallocnum>=NUMMALLOC || !size)  return(0);
-  hmem = GlobalAlloc(GMEM_MOVEABLE, size);
-  if (!hmem)  return(0);
-  mem = GlobalLock(hmem);
-  malloctbl[mallocnum*2]   = (long)hmem;
-  malloctbl[mallocnum*2+1] = (long)mem;
-  mallocnum++;
-  return(mem);
-}
-
-map_dialog_rect(HWND hdlg, long x1, long y1, long x2, long y2, long *out)
+void map_dialog_rect(HWND hdlg, long x1, long y1, long x2, long y2, long *out)
 /* Convert from the goofy dialog units to pixels.
  * Enter: HWND hdlg: handle of dialog with coordinates.
  *        long x1, y1, x2, y2: coordinates to transform.
@@ -1210,7 +1179,7 @@ long MsgBox(HWND hwnd, char *text, char *title, ulong style)
   return(sel);
 }
 
-next_frame(DATA *data)
+void next_frame(DATA *data)
 /* Save the current finished frame, and advance to the next frame in a
  *  sequence.
  * Enter: DATA *data: pointer to window data.                  1/14/98-DWM */
@@ -1240,7 +1209,7 @@ BOOL CALLBACK orbital_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   DATA *data=DispData;
   long x, y, i, j, scr, init=0;
   char text[80], text2[80];
-  real x2, r[9], ang[6];
+  real x2;
   OATOM *orb2;
   MOLECULE *mol;
   static OATOM *orb;
@@ -1333,9 +1302,9 @@ BOOL CALLBACK orbital_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
           sprintf(text, "%g", orb[cur].x[i]/DistVal[du=Pref.munit]);
           SetDlgItemText(hdlg, OrbEditX+i, text); } break;
       default: return(0); } break;
-    case WM_HSCROLL: scr = GetDlgCtrlID(lp);
-      GetScrollRange(lp, SB_CTL, &x, &y);
-      i = GetScrollPos(lp, SB_CTL);
+    case WM_HSCROLL: scr = GetDlgCtrlID((HWND)lp);
+      GetScrollRange((HWND)lp, SB_CTL, &x, &y);
+      i = GetScrollPos((HWND)lp, SB_CTL);
       switch (wp&0xFFFF) {
         case SB_BOTTOM: i = x; break;
         case SB_LINELEFT: if (i>x) i--; break;
@@ -1344,7 +1313,7 @@ BOOL CALLBACK orbital_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
         case SB_PAGERIGHT: i += 1; if (i>y) i = y; break;
         case SB_THUMBPOSITION: case SB_THUMBTRACK: i = (wp>>16); break;
         case SB_TOP: i = y; }
-      SetScrollPos(lp, SB_CTL, i, 1);
+      SetScrollPos((HWND)lp, SB_CTL, i, 1);
       switch (scr) {
         case OrbScrl: sprintf(text, "%d", i);
           if (scr==OrbScrl && i>=0 && i<strlen(OrbLet))
@@ -1407,7 +1376,7 @@ BOOL CALLBACK orbital_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   return(0);
 }
 
-orbital_read(HWND hdlg, OATOM *orb)
+void orbital_read(HWND hdlg, OATOM *orb)
 /* Read in the current settings of the dialog.  This is used when the user
  *  selects done or switches which atom or units they are looking at.
  * Enter: HWND hdlg: handle of the dialog.
@@ -1472,7 +1441,7 @@ void pass_arguments(HWND hwnd, char *arg)
 
   if (!arg)  return;
   if (!strlen(arg))  return;
-  if (!(gmem=CreateFileMapping(0xFFFFFFFF, 0, PAGE_READWRITE, 0,
+  if (!(gmem=CreateFileMapping(INVALID_HANDLE_VALUE, 0, PAGE_READWRITE, 0,
         strlen(arg)+1, "PassArguments")))  return;
   mem = MapViewOfFile(gmem, FILE_MAP_WRITE, 0, 0, 0);
   if (mem) {
@@ -1491,11 +1460,10 @@ BOOL CALLBACK point_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   HWND hwnd;
   DATA *data;
   long x, y, i;
-  char text[80], *newp;
+  char text[80];
   real temp2;
-  float *newn;
 
-  hwnd = SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
+  hwnd = (HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
   switch (msg) {
     case WM_COMMAND: switch (wp&0xFFFF) {
       case HelpHelp: WinHelp(Hwnd,HelpFile,HELP_CONTEXT,HelpPointOpt); break;
@@ -1509,7 +1477,8 @@ BOOL CALLBACK point_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
           if (data->points.process>3)  data->points.process = 3; }
         unlock_window(data); }
       case IDCANCEL: EndDialog(hdlg, 1);  return(1);
-      case PointOpt: DialogBox(hinst, AsymDLG, hdlg, asymptote_dialog);
+      case PointOpt: DialogBox(hinst, MAKEINTRESOURCE(AsymDLG), hdlg,
+                               (DLGPROC)asymptote_dialog);
         return(0);
       case PointPoint: GetDlgItemText(hdlg, PointPoint, text, 79);
         temp2 = GetScrollPos(GetDlgItem(hdlg, PointScr), SB_CTL)*1000;
@@ -1517,8 +1486,8 @@ BOOL CALLBACK point_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
         SetScrollPos(GetDlgItem(hdlg, PointScr), SB_CTL,
                      (long)(temp2*0.001), 1);  return(0);
       default: return(0); } break;
-    case WM_HSCROLL: GetScrollRange(lp, SB_CTL, &x, &y);
-      i = GetScrollPos(lp, SB_CTL);
+    case WM_HSCROLL: GetScrollRange((HWND)lp, SB_CTL, &x, &y);
+      i = GetScrollPos((HWND)lp, SB_CTL);
       switch (wp&0xFFFF) {
         case SB_BOTTOM: i = x; break;
         case SB_LINELEFT: if (i>x) i--; break;
@@ -1527,7 +1496,7 @@ BOOL CALLBACK point_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
         case SB_PAGERIGHT: i += 10; if (i>y) i = y; break;
         case SB_THUMBPOSITION: case SB_THUMBTRACK: i = (wp>>16); break;
         case SB_TOP: i = y; }
-      SetScrollPos(lp, SB_CTL, i, 1);
+      SetScrollPos((HWND)lp, SB_CTL, i, 1);
       sprintf(text, "%d", i*1000);
       SetDlgItemText(hdlg, PointPoint, text);
       break;
@@ -1556,7 +1525,7 @@ BOOL CALLBACK polygon_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   real opacp, opacn, refine, psi, psi2, val;
   char text[80];
 
-  hwnd = SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
+  hwnd = (HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
   switch (msg) {
     case WM_COMMAND: switch (wp&0xFFFF) {
       case HelpHelp: WinHelp(Hwnd, HelpFile, HELP_CONTEXT, HelpPolygon);
@@ -1599,7 +1568,8 @@ BOOL CALLBACK polygon_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
           if (data->poly.process>=6)    data->poly.process = 7; }
         unlock_window(data); }
       case IDCANCEL: EndDialog(hdlg, 1);  return(1);
-      case PolyAsym: DialogBox(hinst, AsymDLG, hdlg, asymptote_dialog);
+      case PolyAsym: DialogBox(hinst, MAKEINTRESOURCE(AsymDLG), hdlg,
+                               (DLGPROC)asymptote_dialog);
         return(0);
       case PolyAuto: if (!(data=lock_window(hwnd)))  break;
         if (!data->mol.maxpsi) {
@@ -1660,9 +1630,9 @@ BOOL CALLBACK polygon_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
       case PolyWire2: if (SendDlgItemMessage(hdlg,PolyWire2,BM_GETCHECK,0,0))
           SendDlgItemMessage(hdlg,PolyWire,BM_SETCHECK,0,0); break;
       default: return(0); } break;
-    case WM_HSCROLL: scr = GetDlgCtrlID(lp);
-      GetScrollRange(lp, SB_CTL, &x, &y);
-      i = GetScrollPos(lp, SB_CTL);
+    case WM_HSCROLL: scr = GetDlgCtrlID((HWND)lp);
+      GetScrollRange((HWND)lp, SB_CTL, &x, &y);
+      i = GetScrollPos((HWND)lp, SB_CTL);
       switch (wp&0xFFFF) {
         case SB_BOTTOM: i = x; break;
         case SB_LINELEFT: if (i>x) i--; break;
@@ -1671,7 +1641,7 @@ BOOL CALLBACK polygon_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
         case SB_PAGERIGHT: i+=2*(1+4*(scr!=PolyScrD)); if (i>y) i = y; break;
         case SB_THUMBPOSITION: case SB_THUMBTRACK: i = (wp>>16); break;
         case SB_TOP: i = y; }
-      SetScrollPos(lp, SB_CTL, i, 1);
+      SetScrollPos((HWND)lp, SB_CTL, i, 1);
       switch (scr) {
         case PolyScrD: sprintf(text, "%d", i*2);
           SetDlgItemText(hdlg, PolyDens, text); break;
@@ -1719,14 +1689,14 @@ BOOL CALLBACK polygon_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   return(0);
 }
 
-process_arguments()
+void process_arguments(void)
 /* Process a set of command line arguments from another copy of the program.
  *                                                             3/14/01-DWM */
 {
   char *temp=0, *mem;
   HANDLE gmem;
 
-  if (!(gmem=CreateFileMapping(0xFFFFFFFF, 0, PAGE_READWRITE, 0,
+  if (!(gmem=CreateFileMapping(INVALID_HANDLE_VALUE, 0, PAGE_READWRITE, 0,
         0, "PassArguments")))  return;
   mem = MapViewOfFile(gmem, FILE_MAP_WRITE, 0, 0, 0);
   if (mem) {
@@ -1742,7 +1712,8 @@ process_arguments()
     free2(temp); }
 }
 
-progress(HWND hwnd, char *title, char *message, long current, long maximum)
+long progress(HWND hwnd, char *title, char *message, long current,
+              long maximum)
 /* Show a progress dialog if a process takes a significant amount of time, or
  *  update the progress dialog, or dispose of the progress dialog.  This also
  *  checks if the user has canceled the dialog.  Note that the progress will
@@ -1807,7 +1778,8 @@ progress(HWND hwnd, char *title, char *message, long current, long maximum)
     if (time2-time0<CLOCKS_PER_SEC*PROGRESSDELAY)  return(1);
     if (max==cur)  return(1);
     ProgressCancel = 0;  ProgressPos = 0;  first = 1;
-    hdlg = CreateDialog(hinst, ProgDLG, owner, progress_dialog);
+    hdlg = CreateDialog(hinst, MAKEINTRESOURCE(ProgDLG), owner,
+                        (DLGPROC)progress_dialog);
     if (topmost)
       SetWindowPos(hdlg, HWND_TOPMOST, 0,0,0,0, SWP_NOACTIVATE|SWP_NOMOVE|
                    SWP_NOSIZE);
@@ -1893,32 +1865,10 @@ BOOL CALLBACK progress_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   return(0);
 }
 
-quit()
+void quit(void)
 /* Exit the program.                                            5/8/96-DWM */
 {
   PostQuitMessage(0);
-}
-
-void *realloc2(void *current, long size)
-/* Actually call realloc.  Provided for source code compatibility.
- * Enter: void *current: pointer to current data.
- *        long size: number of bytes to allocate for the new block.
- * Exit:  void *mem: pointer to memory.                         5/4/96-DWM */
-{
-  long i;
-  HGLOBAL hmem, hmem2;
-
-  for (i=0; i<mallocnum; i++)
-    if ((long)current==malloctbl[i*2+1]) {
-      hmem = (HGLOBAL)malloctbl[i*2];
-      GlobalUnlock(hmem);
-      hmem2 = GlobalReAlloc(hmem, size, GMEM_MOVEABLE);
-      if (!hmem2) { GlobalLock(hmem);  return(0); }
-      current = GlobalLock(hmem2);
-      malloctbl[i*2] = (long)hmem2;
-      malloctbl[i*2+1] = (long)current;
-      return(current); }
-  return(0);
 }
 
 BOOL CALLBACK render_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
@@ -1931,7 +1881,7 @@ BOOL CALLBACK render_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   DATA *data;
   long old;
 
-  hwnd = SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
+  hwnd = (HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
   switch (msg) {
     case WM_COMMAND: switch (wp&0xFFFF) {
       case HelpHelp: WinHelp(Hwnd,HelpFile,HELP_CONTEXT,HelpRender); break;
@@ -1972,14 +1922,14 @@ BOOL CALLBACK render_opt_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
 {
   HWND hwnd;
   DATA *data;
-  long x, y, i, j, scr, steps, anti, aut, mod=0;
+  long x, y, i, scr, steps, anti, aut, mod=0;
   real psi, psi2, val, opac[7], refrac[3];
   char text[80], text2[80];
   static long link=1;
   long opactbl[]={RendEditP0,RendEditP1,RendEditP2,RendEditN0,RendEditN1,
                   RendEditN2,RendEditA1,RendEditPR,RendEditNR,RendEditAR};
 
-  hwnd = SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
+  hwnd = (HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
   switch (msg) {
     case WM_COMMAND: switch (wp&0xFFFF) {
       case HelpHelp: WinHelp(Hwnd, HelpFile, HELP_CONTEXT, HelpRenderOpt);
@@ -2098,9 +2048,9 @@ BOOL CALLBACK render_opt_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
         SetScrollPos(GetDlgItem(hdlg, RendScrStep), SB_CTL, i*0.1, 1);
         return(0);
       default: return(0); } break;
-    case WM_HSCROLL: scr = GetDlgCtrlID(lp);
-      GetScrollRange(lp, SB_CTL, &x, &y);
-      i = GetScrollPos(lp, SB_CTL);
+    case WM_HSCROLL: scr = GetDlgCtrlID((HWND)lp);
+      GetScrollRange((HWND)lp, SB_CTL, &x, &y);
+      i = GetScrollPos((HWND)lp, SB_CTL);
       switch (wp&0xFFFF) {
         case SB_BOTTOM: i = x; break;
         case SB_LINELEFT: if (i>x) i--; break;
@@ -2109,7 +2059,7 @@ BOOL CALLBACK render_opt_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
         case SB_PAGERIGHT: i+= 10; if (i>y) i = y; break;
         case SB_THUMBPOSITION: case SB_THUMBTRACK: i = (wp>>16); break;
         case SB_TOP: i = y; }
-      SetScrollPos(lp, SB_CTL, i, 1);
+      SetScrollPos((HWND)lp, SB_CTL, i, 1);
       switch (scr) {
         case RendScrAR: case RendScrNR: case RendScrPR:
           sprintf(text, "%3.2f", i*0.01);
@@ -2294,20 +2244,20 @@ BOOL CALLBACK sequence_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   return(0);
 }
 
-sequence_stop()
+void sequence_stop(void)
 /* Stop a currently playing sequence.                          1/11/98-DWM */
 {
   HWND hwnd;
   DATA *data;
 
-  if (!(hwnd=SendMessage(HwndC,WM_MDIGETACTIVE,0,0)))  return(0);
-  if (!(data=lock_window(hwnd)))  return(0);
+  if (!(hwnd=(HWND)SendMessage(HwndC,WM_MDIGETACTIVE,0,0)))  return;
+  if (!(data=lock_window(hwnd)))  return;
   data->dflag &= (~(1<<10));
   unlock_window(data);
   recheck(hwnd, 0);
 }
 
-set_window_name(HWND hwnd, DATA *data)
+void set_window_name(HWND hwnd, DATA *data)
 /* Reset the current name of the window to match the name of the actual file.
  * Enter: HWND hwnd: window handle.
  *        DATA *data: pointer to window.                      10/24/97-DWM */
@@ -2320,35 +2270,21 @@ set_window_name(HWND hwnd, DATA *data)
   SetWindowText(hwnd, text);
 }
 
-long size2(void *mem)
-/* Return the size of the specified memory block.  If the pointer does not
- *  point to the base address of a memory block, a value of zero is returned.
- * Enter: void *mem: pointer to a locked memory block.
- * Exit:  long size: size of the memory block in bytes.        2/27/01-DWM */
-{
-  HANDLE hmem;
-
-  if (!mem)  return(0);
-  if (!(hmem=GlobalHandle(mem)))  return(0);
-  return(GlobalSize(hmem));
-}
-
-start_avi()
+void start_avi(void)
 /* Start up the AVI control functions, if available.           1/22/98-DWM */
 {
-  FARPROC proc;
   char name[]="AVIFIL32.DLL";
 
   AVILoad = 1;
-  if (havi)  return(0);
-  if (!windows_file(name))  return(0);
+  if (havi)  return;
+  if (!windows_file(name))  return;
   if (!(havi=LoadLibrary(name)))
-    return(0);
+    return;
 }
 
-start_common()
-/* Start up the common controls.  If unavailable, print a snide message, then
- *  bail.                                                       2/5/97-DWM */
+long start_common(void)
+/* Start up the common controls.  If unavailable, print a message.
+ * Exit:  long okay: 0 for failed.                              2/5/97-DWM */
 {
   FARPROC init;
   char name[]="COMCTL32.DLL";
@@ -2357,22 +2293,23 @@ start_common()
     MsgBox(Hwnd, "Program aborted.\n\n"
            "Can't use common controls.  The file COMCTL32.DLL\n"
            "is missing from the system directory.", "Terminal Error", MB_OK);
-    return(0); }
+    return 0; }
   if (!(hcom=LoadLibrary(name)))
-        return(0);
+    return 0;
   init = GetProcAddress(hcom, "InitCommonControls");
   (*init)();
+  return 1;
 }
 
-start_ctl3d()
+void start_ctl3d(void)
 /* Start up the faux-3D control functions, if available.       10/2/96-DWM */
 {
   FARPROC reg, sub;
   char name[]="CTL3D32.DLL";
 
-  if (!windows_file(name))  return(0);
+  if (!windows_file(name))  return;
   if (!(hctl3d=LoadLibrary(name)))
-    return(0);
+    return;
   reg = GetProcAddress(hctl3d, "Ctl3dRegister");
   sub = GetProcAddress(hctl3d, "Ctl3dAutoSubclass");
   if ((*reg)(hinst))
@@ -2389,7 +2326,7 @@ BOOL CALLBACK stereo_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   HWND ctrl;
   DATA *data=DispData;
   char text[80];
-  long i, grey, mode=-1, len;
+  long i, grey, mode=-1;
   real val;
   static long du, lastmode, update, lastswap, replace;
   static real ocular[2];
@@ -2525,7 +2462,7 @@ BOOL CALLBACK stereo_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   return(0);
 }
 
-test(char *data)
+void test(char *data)
 /* Standard test message entry point.  This routine allows diagnostic
  *  messages to be printed by non-Windows source routines.
  * Enter: char *data: string to print in a dialog.             10/1/96-DWM */
@@ -2534,10 +2471,9 @@ test(char *data)
 
 /**/  fptr = fopen("C:\\TEMP\\TEST.TXT", "at");
   fprintf(fptr, "%s\n", data);
-  fclose(fptr);
-  return(0); /**/
-/**  SetWindowText(Hwnd, data); /**/
-/**  debug(data);  /**/
+  fclose(fptr); /**/
+/**  SetWindowText(Hwnd, data);  **/
+/**  debug(data);   **/
 }
 
 VOID CALLBACK timer(HWND hwnd, ulong msg, ulong id, long time)
@@ -2558,7 +2494,7 @@ VOID CALLBACK timer(HWND hwnd, ulong msg, ulong id, long time)
   if (inloop || Busy>=10 || !NumWindows)  return;
   if ((wnd%3)==2) { wnd++;  return; }
   hwnd = HwndList[(wnd/3)%NumWindows];
-  if (!(wnd%3))  hwnd = SendMessage(HwndC, WM_MDIGETACTIVE,0,0);
+  if (!(wnd%3))  hwnd = (HWND)SendMessage(HwndC, WM_MDIGETACTIVE,0,0);
   wnd++;  if (wnd>2000)  wnd = 0;
   if (!(data=lock_window(hwnd)))  return;
   inloop = 1;
@@ -2611,7 +2547,7 @@ VOID CALLBACK timer(HWND hwnd, ulong msg, ulong id, long time)
     ReleaseDC(hwnd, dc); }
   else if ((data->dflag>>10)&1)
     next_frame(data);
-  if (hwnd==SendMessage(HwndC, WM_MDIGETACTIVE,0,0) && HwndStat) {
+  if (hwnd==(HWND)SendMessage(HwndC, WM_MDIGETACTIVE,0,0) && HwndStat) {
     stext[0] = 0;
     switch (status) {
       case 1: if (data->points.process<4) {
@@ -2681,10 +2617,10 @@ HANDLE unlock_window(DATA *data)
 
   if (!data)  return(0);
   for (i=0; i<NumLocked; i++)
-    if (LockList[i*3+1]==data) {
+    if (LockList[i*3+1]==(long)data) {
       LockList[i*3+2]--;
       if (LockList[i*3+2])
-        return(GetWindowLong(LockList[i*3], GWL_USERDATA));
+        return((HWND)GetWindowLong((HWND)LockList[i*3], GWL_USERDATA));
       break; }
   if (i<NumLocked) {
     memmove(LockList+i*3, LockList+i*3+3, (NumLocked-i-1)*3*sizeof(long));
@@ -2724,30 +2660,7 @@ HANDLE unlock_window(DATA *data)
   return(hnd);
 }
 
-HANDLE unlock2(void *mem)
-/* Unlock a memory pointer which was allocated using malloc2, returning the
- *  Windows handle associated with it.  This piece of memory is no longer
- *  allocated using free2 and malloc2, but instead requires the dumb Windows
- *  routines.
- * Enter: void *mem: pointer to memory.
- *        HANDLE handle: handle to the memory.                 2/12/97-DWM */
-{
-  long i;
-  HGLOBAL hmem;
-
-  if (!mem)  return(0);
-  for (i=0; i<mallocnum; i++)
-    if ((long)mem==malloctbl[i*2+1]) {
-      hmem = (HGLOBAL)malloctbl[i*2];
-      GlobalUnlock(hmem);
-      memmove(malloctbl+i*2, malloctbl+i*2+2,
-                      (mallocnum-i-1)*2*sizeof(long));
-      mallocnum--;
-      return(hmem); }
-  return(0);
-}
-
-warning(HWND hwnd2, char *text)
+long warning(HWND hwnd2, char *text)
 /* Report a warning, if warnings are currently viewed.
  * Enter: HWND hwnd: handle of the window or null to use best-guess top
  *                   window.
@@ -2780,24 +2693,22 @@ HWND window_handle(DATA *data)
   long i;
 
   for (i=0; i<NumLocked; i++)
-    if (LockList[i*3+1]==data)
-      return(LockList[i*3]);
+    if (LockList[i*3+1]==(long)data)
+      return((HWND)LockList[i*3]);
   return(0);
 }
 
-APIENTRY WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR argv, long winmode)
+int APIENTRY WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR argv, int winmode)
 /* Enter: HINSTANCE inst: number identifying this program.
  *        HINSTANCE prev: 0.
  *        LPSTR argv: single string containing command line parameters.
- *        long winmode: how window is displayed at start.       5/4/96-DWM */
+ *        int winmode: how window is displayed at start.        5/4/96-DWM */
 {
   CLIENTCREATESTRUCT ccs;
   MSG msg;
   WNDCLASS wcl;
   HACCEL acc;
   HDC hdc;
-  RECT rect;
-  long x, y;
   HWND hwnd;
 
   memset(lastview, 0, 1024);
@@ -2810,10 +2721,10 @@ APIENTRY WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR argv, long winmode)
   read_ini();
   show_splash();
   wcl.lpszClassName = WinName;
-  wcl.lpfnWndProc = main_loop;
+  wcl.lpfnWndProc = (WNDPROC)main_loop;
   wcl.style = 0;
-  wcl.hIcon = LoadIcon(inst, ICON1);
-  wcl.hCursor = LoadCursor(0, IDC_ARROW);
+  wcl.hIcon = LoadIcon(inst, MAKEINTRESOURCE(ICON1));
+  wcl.hCursor = LoadCursor(0, MAKEINTRESOURCE(IDC_ARROW));
   wcl.lpszMenuName = "MainMenu";
   wcl.cbClsExtra = wcl.cbWndExtra = 0;
   wcl.hbrBackground = (HBRUSH)(COLOR_APPWORKSPACE+1);
@@ -2846,8 +2757,9 @@ APIENTRY WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR argv, long winmode)
   UpdateWindow(HwndC);
   InvalidateRect(HwndC, 0, 0);
   wcl.lpszClassName = WinName2;
-  wcl.lpfnWndProc = second_loop;
-  wcl.lpszMenuName = wcl.cbClsExtra = wcl.cbWndExtra = 0;
+  wcl.lpfnWndProc = (WNDPROC)second_loop;
+  wcl.lpszMenuName = 0;
+  wcl.cbClsExtra = wcl.cbWndExtra = 0;
   wcl.hbrBackground = GetStockObject(BLACK_BRUSH);
   if (!RegisterClass(&wcl))
     return(0);
