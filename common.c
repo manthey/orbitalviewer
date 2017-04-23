@@ -43,7 +43,7 @@ char *LightKey[]={
     "Local",
     0};
 char *OrbKey[]={
-    "DefaultPerspective",
+    "DefaultPerspective",   // 0
     "BackgroundColor",
     "PositiveColor",
     "NegativeColor",
@@ -53,7 +53,7 @@ char *OrbKey[]={
     "QuickRenderMode",
     "RenderMode",
     "FixedSize",
-    "FixedWidth",
+    "FixedWidth",           // 10
     "FixedHeight",
     "FileName",
     "Scale(m)",
@@ -63,7 +63,7 @@ char *OrbKey[]={
     "CameraCenterX(m)",
     "CameraCenterY(m)",
     "CameraCenterZ(m)",
-    "CameraTheta(rad)",
+    "CameraTheta(rad)",     // 20
     "CameraPhi(rad)",
     "CameraPsi(rad)",
     "CameraCx",
@@ -73,7 +73,7 @@ char *OrbKey[]={
     "EndLight",
     "Psi^2(log10)",
     "Cutaway",
-    "EndCutaway",
+    "EndCutaway",           // 30
     "Stereo",
     "EndStereo",
     "Points",
@@ -83,7 +83,7 @@ char *OrbKey[]={
     "Asymptotes",
     "EndAsymptotes",
     "Raytrace",
-    "EndRaytrace",
+    "EndRaytrace",          // 40
     "Frame",
     "LastFrame",
     "Sequence",
@@ -93,7 +93,7 @@ char *OrbKey[]={
     "EndOfFile",
     "SequenceBezier",
     "FramesPerSecond",
-    0};
+    0};                     // 50
 char *OrbPhrase[]={
     "No",
     "Yes",
@@ -318,6 +318,7 @@ long new_window_mid(DATA *data)
   OATOM *orb;
   LIGHT *ls;
   long clr[4], i, j;
+  double phys[10];
 
   #ifndef ANSIC
     memcpy(&data->pref, &Pref, sizeof(PREF));
@@ -373,6 +374,16 @@ long new_window_mid(DATA *data)
   data->render.refrac[0]=data->render.refrac[1]=data->render.refrac[2]=1;
   data->stereo.interocular[0] = 250;  data->stereo.interocular[1] = 800;
   data->stereo.separation = 10*a0;  data->stereo.flags = 4;
+
+  /* Set some default position values */
+  memset(phys, 0, 10*sizeof(double));
+  phys[2] = 7.14e-8;
+  phys[3] = phys[4] = 10867.5;
+  data->renderval[1] = 25;  /* perspective */
+  data->renderval[2] = data->renderval[3] = 100;
+  render_dlt_new(10, 0, data->renderval[2], data->renderval[3],
+                 data->renderval[1], data->renderval, data->renderdlt);
+  camera_rotate(data->renderval, data->renderdlt, phys, 1);
   return(1);
 }
 
