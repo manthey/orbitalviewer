@@ -17,6 +17,11 @@
 #include "data.h"
 #include "draw.h"
 
+typedef struct LOCKTBL {
+  HWND hwnd;
+  DATA *data;
+  long count; } LOCKTBL;
+
 char HelpFile[]="OV.HLP", lastview[1024], Program[]="Orbital Viewer",
      Untitled[]="Untitled", WinName[]="ORBwin", WinName2[]="ORBw2";
 DATA *DispData;
@@ -25,8 +30,8 @@ HMENU Hmenu;
 HPALETTE Hpal=0, HpalSplash=0;
 HWND DispHwnd, Hwnd, HwndC, HwndList[MAXWINDOWS], HwndSplash=0, HwndStat=0,
      HwndTool=0;
-long AVILoad=0, BitsPixel, Busy=0, CloseMode=0, LockList[MAXLOCK*3],
-     malloctbl[NUMMALLOC*4], mallocnum=0, NumLocked=0, NumWindows=0,
+LOCKTBL LockList[MAXLOCK];
+long AVILoad=0, BitsPixel, Busy=0, CloseMode=0, NumLocked=0, NumWindows=0,
      PalChange=0, PreviewDelay=1500, ProgressCancel, ProgressPos,
      *ToolCustom=0;
 PREF Pref;
@@ -640,10 +645,10 @@ void free_window(HWND hwnd)
   if (!hwnd)  return;
   if (!(data=lock_window(hwnd))) return;
   for (i=0; i<NumLocked; i++)
-    if (LockList[i*3+1]==(long)data)
+    if (LockList[i].data==data)
       break;
   if (i<NumLocked) {
-    memmove(LockList+i*3, LockList+i*3+3, (NumLocked-i-1)*3*sizeof(long));
+    memmove(LockList+i, LockList+i+1, (NumLocked-i-1)*sizeof(LOCKTBL));
     NumLocked--; }
   orb_points(&data->points, 0, &data->mol, 0, 4);
   orb_polygons(&data->poly, 0, &data->mol, 0, 4);
@@ -868,15 +873,15 @@ DATA *lock_window(HWND hwnd)
 
   if (!hwnd)  return(0);
   for (i=0; i<NumLocked; i++)
-    if (LockList[i*3]==(long)hwnd) {
-      LockList[i*3+2] ++;
-      return((DATA *)LockList[i*3+1]); }
+    if (LockList[i].hwnd==hwnd) {
+      LockList[i].count++;
+      return(LockList[i].data); }
   if (NumLocked==MAXLOCK)  return(0);
   if (!(hnd=(HANDLE)GetWindowLong(hwnd, GWL_USERDATA)))  return(0);
   if (!(data=lock2(hnd)))  return(0);
-  LockList[NumLocked*3]   = (long)(hwnd);
-  LockList[NumLocked*3+1] = (long)(data);
-  LockList[NumLocked*3+2] = 1;
+  LockList[NumLocked].hwnd = hwnd;
+  LockList[NumLocked].data = data;
+  LockList[NumLocked].count = 1;
   NumLocked++;
   data->mol.orb      = lock2(data->mol.orb);
   data->mol.ls       = lock2(data->mol.ls);
@@ -2617,13 +2622,13 @@ HANDLE unlock_window(DATA *data)
 
   if (!data)  return(0);
   for (i=0; i<NumLocked; i++)
-    if (LockList[i*3+1]==(long)data) {
-      LockList[i*3+2]--;
-      if (LockList[i*3+2])
-        return((HWND)GetWindowLong((HWND)LockList[i*3], GWL_USERDATA));
+    if (LockList[i].data==data) {
+      LockList[i].count--;
+      if (LockList[i].count)
+        return((HWND)GetWindowLong(LockList[i].hwnd, GWL_USERDATA));
       break; }
   if (i<NumLocked) {
-    memmove(LockList+i*3, LockList+i*3+3, (NumLocked-i-1)*3*sizeof(long));
+    memmove(LockList+i, LockList+i+1, (NumLocked-i-1)*sizeof(LOCKTBL));
     NumLocked--; }
   data->mol.orb      = unlock2(data->mol.orb);
   data->mol.ls       = unlock2(data->mol.ls);
@@ -2693,8 +2698,8 @@ HWND window_handle(DATA *data)
   long i;
 
   for (i=0; i<NumLocked; i++)
-    if (LockList[i*3+1]==(long)data)
-      return((HWND)LockList[i*3]);
+    if (LockList[i].data==data)
+      return(LockList[i].hwnd);
   return(0);
 }
 
