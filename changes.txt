@@ -1,3 +1,7 @@
+9/14/04: Version 1.04 released.
+
+9/14/04: Allow changing anaglyph colors.
+
 5/22/02: Version 1.03 released.
 
 5/16/02:
