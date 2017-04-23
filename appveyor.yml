@@ -1,15 +1,15 @@
 init:
   - call "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\vcvarsall.bat" amd64_x86
+  - SET PROJDIR=%cd%
   - mkdir C:\P
   - mkdir C:\P\lib
-  - pushd C:\P\lib
+  - cd C:\P\lib
   - curl -L -O "https://github.com/manthey/gv/releases/download/gv-latest/gvlib.lib"
   - curl -L -O "https://github.com/manthey/gv/releases/download/gv-latest/gvlib.h"
   - curl -L -O "https://github.com/manthey/gv/releases/download/gv-latest/mem.lib"
   - curl -L -O "https://github.com/manthey/gv/releases/download/gv-latest/mem.h"
-  - popd
-  - SET PATH="%PATH%;%cd%\utils"
-
+  - cd %PROJDIR%
+  - SET PATH=%PATH%;%PROJDIR%\utils
 
 build_script:
   - nmake
