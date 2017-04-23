@@ -1,6 +1,6 @@
 # Orbital Viewer
 
-[![Build status](https://ci.appveyor.com/api/projects/status/sxe3531fs0qjh5g5/branch/master?svg=true)](https://ci.appveyor.com/project/manthey/orbital-viewer/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/sxe3531fs0qjh5g5/branch/master?svg=true)](https://ci.appveyor.com/project/manthey/orbitalviewer/branch/master)
 
 A program for drawing orbitals.
 
