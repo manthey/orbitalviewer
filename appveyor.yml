@@ -1,0 +1,41 @@
+init:
+  - call "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\vcvarsall.bat" amd64_x86
+  - mkdir C:\P
+  - mkdir C:\P\lib
+  - pushd C:\P\lib
+  - curl -L -O "https://github.com/manthey/gv/releases/download/gv-latest/gvlib.lib"
+  - curl -L -O "https://github.com/manthey/gv/releases/download/gv-latest/gvlib.h"
+  - curl -L -O "https://github.com/manthey/gv/releases/download/gv-latest/mem.lib"
+  - curl -L -O "https://github.com/manthey/gv/releases/download/gv-latest/mem.h"
+  - popd
+  - SET PATH="%PATH%;%cd%\utils"
+
+
+build_script:
+  - nmake
+  - dir ov.exe ansiorb.exe
+
+artifacts:
+  - path: ov.exe
+  - path: ansiorb.exe
+
+deploy:
+  - provider: GitHub
+    tag: 'ov-latest'
+    release: 'Release ov-latest'
+    auth_token:
+      secure: PGsGUDU6oqIy7zCyTMwIWlzf4TbJtuIgqmWb9ZLqNlM13AAaxWfDlzDlG+0CyHFx
+    artifact: ov.exe, ansiorb.exe
+    force_update: true
+    on:
+      branch: master
+
+  - provider: GitHub
+    tag: $(appveyor_repo_tag_name)
+    release: Release $(appveyor_repo_tag_name)
+    auth_token:
+      secure: PGsGUDU6oqIy7zCyTMwIWlzf4TbJtuIgqmWb9ZLqNlM13AAaxWfDlzDlG+0CyHFx
+    artifact: ov.exe, ansiorb.exe
+    force_update: true
+    on:
+      appveyor_repo_tag: true
