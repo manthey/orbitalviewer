@@ -6,7 +6,7 @@
 #define ANSIC           1
 #define NAMELEN      1024
 #define ONENAMELEN    256
-#define SUBVERSION      0
+#define SUBVERSION      4
 #define VERSION         1
 
 #define BACKCOLOR       0

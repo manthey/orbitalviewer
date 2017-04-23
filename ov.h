@@ -15,7 +15,7 @@
 #define OPACDITHER    2137
 #define PROGRESSDELAY    3
 #define SMOOTHLOW      240
-#define SUBVERSION       3
+#define SUBVERSION       4
 #define VERSION          1
 
 #define BACKCOLOR        0

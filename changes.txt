@@ -1,0 +1,28 @@
+5/22/02: Version 1.03 released.
+
+5/16/02:
+Feature: Added output for digistar files.
+
+4/10/01: Version 1.02 released.
+
+4/3/01:
+Fixed bug: The alpha, beta, and gamma rotations for an atom were ignored on
+ some versions of Windows.
+Fixed bug: On some molecules, the polygon constructor could get into an
+ infinite loop.
+Feature: Only a single instance of Orbital Viewer can be open at a time.
+ Selecting another file in Explorer or via the command line opens the new
+ file in the same instance of Orbital Viewer.
+Improvement: A progress dialog is displayed during AVI compression.
+
+4/11/98: Version 1.01 released.
+
+3/18/98:
+Fixed bug: The program occasionally crashed if the lighting dialog was
+ cancelled.
+Fixed bug: The program would crash if the entire asymptote was calculated in
+ polygon or point mode in a single time slice and the window was a certain
+ size.
+
+3/1/98: Version 1.00 released.
+
