@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
   char name[ONENAMELEN], *ext[2]={".WRL",".PPM"};
   long tim=clock();
 
-  if (argc<1 || argc>4 || argv[argc-1][1]=='?') {
+  if (argc<1 || argc>4 || argv[argc-1][1]=='?' || argv[argc-1][0]=='-') {
     printf("Command line orbital calculator.\n\n"
            "Syntax:  ANSIORB (orb file) (output file) [screen size]\n"
            "         ANSIORB (orb file) > output file\n"
@@ -142,10 +142,13 @@ int save_ppm(DATA *data, FILE *fptr)
  *        FILE *fptr: pointer to open file.  The file is not closed.
  * Exit:  int failed: 0 for okay, 1 for failed.                1/18/97-DWM */
 {
+  int i;
+
   if (data->render.w<=0 || data->render.h<=0 || !data->render.buf)
     return(1);
-  fprintf(fptr, "P6 %d %d 255\n", data->render.w, data->render.h);
-  fwrite(data->render.buf, 1, data->render.w*data->render.h*3, fptr);
+  fprintf(fptr, "P3 %d %d 255\n", data->render.w, data->render.h);
+  for (i=0; i<data->render.w*data->render.h*3; i++)
+	fprintf(fptr, "%d ", data->render.buf[i]);
   return(0);
 }
 
