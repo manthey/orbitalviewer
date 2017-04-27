@@ -93,4 +93,5 @@ void   render_physical(double *val, double *dlt, double *phys, lmatrix *ang);
 long   save_digistar  (DATA *data);
 long   save_vrml      (DATA *data);
 void   save_vrml_color(FILE *fptr, char *text, long clr);
+void   test           (char *data);
 void   update_process (DATA *data);

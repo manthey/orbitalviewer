@@ -152,6 +152,13 @@ int save_ppm(DATA *data, FILE *fptr)
   return(0);
 }
 
+void test(char *data)
+/* Standard test message entry point.  This just prints a string to stderr.
+ * Enter: char *data: string to log.                           10/1/96-DWM */
+{
+  fprintf(stderr, "%s\n", data);
+}
+
 void update_geo(DATA *data)
 /* Update the parameters necessary for raytracing.  This should only be
  *  called after orb_render has been called with process==6.

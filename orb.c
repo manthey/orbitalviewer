@@ -2070,19 +2070,22 @@ real rnd(real low, real high, long inc)
 {
   real r, s;
   static long ever=0;
+  long i;
 
   if (high<=low)  return(low);
   if (!ever) {
-    srand((unsigned)((time(0)<<16)+(time(0)>>16)));
+    srand((unsigned int)((time(0)<<16)+(time(0)>>16)));
     ever = 1; }
-  r = ((real)rand()+(real)rand()*(RAND_MAX+1)+(real)rand()*(RAND_MAX+1)*
-      (RAND_MAX+1)+(real)rand()*(RAND_MAX+1)*(RAND_MAX+1)*(RAND_MAX+1));
-  s = sq(sq((real)(RAND_MAX+1)))-1;
-  switch (inc) {
-    case 0: return((r+1)/(s+2)*(high-low)+low);
-    case 1: return(r/(s+1)*(high-low)+low);
-    case 2: return((r+1)/(s+1)*(high-low)+low);
-    default: return(r/s*(high-low)+low); }
+  do {
+    r = 0;
+    s = (real)RAND_MAX;
+    for (i = 0; i < 4; i++) {
+      r += (real)rand() / s;
+      s *= ((real)RAND_MAX + 1);
+    }
+  } while (r > 1 || (r == 0 && (inc == 0 || inc == 2)) ||
+           (r >= 1 && inc <= 1));
+  return r * (high - low) + low;
 }
 
 void snap_to_surface(float *xyz, MOLECULE *mol, real psi2, real uncertain)

@@ -2013,6 +2013,7 @@ BOOL CALLBACK render_opt_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
             prep_check(&data->mol); }
           data->mol.Psi = psi;
           Busy -= 10; }
+        //DWM::
         psi = log10(data->mol.maxpsi)-1-0.25*(data->mol.orb[0].n-
               data->mol.orb[0].l)-0.4*(data->mol.nump-1);
         SetScrollPos(GetDlgItem(hdlg, RendScrPsi), SB_CTL, (long)psi*-10, 1);
@@ -2470,7 +2471,7 @@ BOOL CALLBACK stereo_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
 void test(char *data)
 /* Standard test message entry point.  This routine allows diagnostic
  *  messages to be printed by non-Windows source routines.
- * Enter: char *data: string to print in a dialog.             10/1/96-DWM */
+ * Enter: char *data: string to log.                           10/1/96-DWM */
 {
   FILE *fptr;
 
