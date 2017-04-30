@@ -1,0 +1,93 @@
+OrbitalFileV1.0
+DefaultPerspective                     25
+BackgroundColor      0x000000
+PositiveColor        0x0000FF
+NegativeColor        0xFF8000
+UseQuickRender       Yes
+QuickRenderMode      Raytrace
+RenderMode           Raytrace
+FixedSize            Yes
+FixedWidth           128
+FixedHeight          128
+Scale(m)                3.09039505098e-09
+Perspective                            25
+LastWidth                            1024
+LastHeight                           1024
+CameraCenterX(m)                        0
+CameraCenterY(m)                        0
+CameraCenterZ(m)              7.72599e-08
+CameraTheta(rad)           -1.54124571141
+CameraPhi(rad)            -0.937821749012
+CameraPsi(rad)             0.946369232745
+CameraCx                          19237.5
+Atom {     # Atom 1
+  n                    4
+  l                    f
+  m                    0
+  Neutrons(N)          0
+  Protons(Z)           1
+  Mass(kg)                    1.6605402e-27
+  }
+Light {     # Light 1
+  PositionX(m)             -4.762595241e-05
+  PositionY(m)              4.762595241e-05
+  PositionZ(m)              4.762595241e-05
+  Intensity                            0.55
+  Ambience                              0.4
+  Local                No
+  }
+Light {     # Light 2
+  PositionX(m)              1.587531747e-05
+  PositionY(m)              1.587531747e-05
+  PositionZ(m)              3.704240743e-05
+  Intensity                            0.55
+  Ambience                              0.6
+  Local                No
+  }
+Psi^2(log10)                         -4.3
+Cutaway {     # Cutaway 1
+  Type                 None
+  Surface              Yes
+  Invert               No
+  }
+Stereo {
+  Mode                 Monoscopic
+  TopScanline          Left
+  RedSide              Left
+  AutoSeparation       Yes
+  UseImage             No
+  Interocular                           250
+  StereoscopeInter                      800
+  Separation(m)              5.29177249e-10
+  }
+Points {
+  Points               10000
+  }
+Polygons {
+  Density              8
+  Refinement                            1.3
+  PositiveOpacity                         1
+  NegativeOpacity                         1
+  Style                Solid
+  }
+Asymptotes {
+  Density              0
+  Opacity                                 0
+  Style                Solid
+  }
+Raytrace {
+  PosProbOpacity                          0
+  PosSurfaceOpacity                       1
+  PosInteriorOpacity                      0
+  NegProbOpacity                          0
+  NegSurfaceOpacity                       1
+  NegInteriorOpacity                      0
+  AsymptoteOpacity                        0
+  PositiveRefraction                      1
+  NegativeRefraction                      1
+  AsymptoteRefraction                     1
+  Steps                2000
+  AutoBrightness       No
+  Coarse               No
+  Antialias            Yes
+  }

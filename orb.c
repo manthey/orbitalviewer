@@ -1281,6 +1281,7 @@ long orb_render(RENDER *re, STEREO *st, CUTAWAY *cut, MOLECULE *mol,
         for (; re->x<re->w; re->x++)
           if (re->x%4 || re->y%4 || full) {
             if (time && clock()-cl>time*CLOCKS_PER_SEC)  return(0);
+            coarse = 0;
             if ((re->antialias&1) && ((re->antialias>>2)&3)<=1) {
               coarse = 1;
               if (re->w-re->x<=4 || re->h-re->y<=4)  coarse = 0; }
@@ -1291,16 +1292,15 @@ long orb_render(RENDER *re, STEREO *st, CUTAWAY *cut, MOLECULE *mol,
                   re->phase[j*re->w+i]!=re->phase[(j+4)*re->w+i+4] ||
                   re->phase[j*re->w+i]!=re->phase[j*re->w+i+4])
                 coarse = 0; }
-            if (coarse)
-              for (k=0; k<3; k++) {
-                if (abs(img[j*scan+i*3+k]-img[j*scan+(i+4)*3+k])>15 ||
-                    abs(img[j*scan+i*3+k]-img[(j+4)*scan+(i+4)*3+k])>15 ||
-                    abs(img[j*scan+i*3+k]-img[(j+4)*scan+i*3+k])>15)
-                  coarse = 0;
-                if (abs(img[j*scan+(i+4)*3+k]-img[(j+4)*scan+i*3+k])>15 ||
-                    abs(img[j*scan+(i+4)*3+k]-img[(j+4)*scan+(i+4)*3+k])>15||
-                    abs(img[(j+4)*scan+i*3+k]-img[(j+4)*scan+(i+4)*3+k])>15)
-                  coarse = 0; }
+            for (k=0; coarse && k<3; k++) {
+              if (abs(img[j*scan+i*3+k]-img[j*scan+(i+4)*3+k])>15 ||
+                  abs(img[j*scan+i*3+k]-img[(j+4)*scan+(i+4)*3+k])>15 ||
+                  abs(img[j*scan+i*3+k]-img[(j+4)*scan+i*3+k])>15)
+                coarse = 0;
+              if (abs(img[j*scan+(i+4)*3+k]-img[(j+4)*scan+i*3+k])>15 ||
+                  abs(img[j*scan+(i+4)*3+k]-img[(j+4)*scan+(i+4)*3+k])>15||
+                  abs(img[(j+4)*scan+i*3+k]-img[(j+4)*scan+(i+4)*3+k])>15)
+                coarse = 0; }
             if (coarse)  if (st)
               if (st->mode==StereoINTERLACED)
                 coarse = 0;
@@ -1330,22 +1330,24 @@ long orb_render(RENDER *re, STEREO *st, CUTAWAY *cut, MOLECULE *mol,
       if (!(re->antialias&2)) {
         re->process = 7;  return(1); }
     case 6: scan = re->scan;  img = re->image;
+      #define ANTI_THRESHOLD 2
+      #define ANTI_STEPS 4
       for (; re->y<re->h-1; re->x=0, re->y++)
         for (; re->x<re->w-1; re->x++) {
           for (k=dir=0; k<3; k++) {
-            if (abs(img[re->y*scan+re->x*3+k]-img[re->y*scan+(re->x+1)*3+k])>
-                4)  dir |= 1;
-            if (abs(img[re->y*scan+re->x*3+k]-img[(re->y+1)*scan+re->x*3+k])>
-                4)  dir |= 2; }
+            if (abs(img[re->y*scan+re->x*3+k]-img[re->y*scan+(re->x+1)*3+k])>=
+                ANTI_THRESHOLD)  dir |= 1;
+            if (abs(img[re->y*scan+re->x*3+k]-img[(re->y+1)*scan+re->x*3+k])>=
+                ANTI_THRESHOLD)  dir |= 2; }
           if (!dir)  continue;
           if (time && clock()-cl>time*CLOCKS_PER_SEC)  return(0);
           t = 1;
           for (k=0; k<3; k++)
             total[k] = img[re->y*scan+re->x*3+k];
-          for (j=0; j<1+3*(dir>>1); j++)
-            for (i=0; i<1+3*(dir&1); i++)  if (i || j) {
-              orb_render_ray(re, st, cut, mol, re->x+i*0.25, re->y+j*0.25,
-                             precise, clrin, clrout);
+          for (j=0; j<1+(ANTI_STEPS-1)*(dir>>1); j++)
+            for (i=0; i<1+(ANTI_STEPS-1)*(dir&1); i++)  if (i || j) {
+              orb_render_ray(re, st, cut, mol, re->x+i*1.0/ANTI_STEPS,
+                             re->y+j*1.0/ANTI_STEPS, precise, clrin, clrout);
               if (re->brightness==1) {
                 total[0] += clrout[re->type]  *255;
                 total[1] += clrout[1]         *255;
