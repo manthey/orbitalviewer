@@ -1669,7 +1669,7 @@ void prep_check(MOLECULE *mol)
       if (psi>mol->Psi/sq(mol->nump) && bad<9999) {
         if (psi*sq(mol->nump)>mol->maxpsi)
           mol->maxpsi = psi*sq(mol->nump);
-        max = z + 0.04*orb[i].n; }
+        max = z + 0.04*orb[i].n*orb[i].n; }
       if (psi<low)  bad ++;
       else          bad = 0;
       if ((psi<mol->Psi*1e-10 || psi>mol->Psi*1e10) && z>4*orb[i].n*orb[i].n)

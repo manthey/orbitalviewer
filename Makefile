@@ -11,9 +11,6 @@ ov.exe: dlt.obj draw.obj file.obj matrix.obj orb.obj ov.obj ov.res
 	link $(LINK_OPTS) /OUT:ov.exe dlt.obj draw.obj file.obj matrix.obj orb.obj ov.obj ov.res  gvlib.lib mem.lib  advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32.lib shell32.lib user32.lib
 
 
-dcpmap.obj: dcpmap.c
-	cl /c $(CL_OPTS) dcpmap.c
-
 ansi.obj: ansi.c common.c ansi.h orb.h
 	cl /c /Za $(CL_OPTS) ansi.c
 data.h: u\splash.jpg u\preview.jpg u\header.avi

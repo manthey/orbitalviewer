@@ -13,11 +13,14 @@ init:
 
 build_script:
   - nmake
-  - dir ov.exe ansiorb.exe
+  - call "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\vcvarsall.bat" amd64
+  - nmake /f Makefile64
+  - dir ov.exe ansiorb.exe ansiorb64.exe
 
 artifacts:
   - path: ov.exe
   - path: ansiorb.exe
+  - path: ansiorb64.exe
 
 deploy:
   - provider: GitHub
@@ -25,7 +28,7 @@ deploy:
     release: 'Release ov-latest'
     auth_token:
       secure: PGsGUDU6oqIy7zCyTMwIWlzf4TbJtuIgqmWb9ZLqNlM13AAaxWfDlzDlG+0CyHFx
-    artifact: ov.exe, ansiorb.exe
+    artifact: ov.exe, ansiorb.exe, ansiorb64.exe
     force_update: true
     on:
       branch: master
@@ -35,7 +38,7 @@ deploy:
     release: Release $(appveyor_repo_tag_name)
     auth_token:
       secure: PGsGUDU6oqIy7zCyTMwIWlzf4TbJtuIgqmWb9ZLqNlM13AAaxWfDlzDlG+0CyHFx
-    artifact: ov.exe, ansiorb.exe
+    artifact: ov.exe, ansiorb.exe, ansiorb64.exe
     force_update: true
     on:
       appveyor_repo_tag: true

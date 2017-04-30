@@ -1,0 +1,25 @@
+CL_OPTS=/O2 /GL /W2 /w24101 /w34244 /w34305 /nologo /I C:\P\lib
+LINK_OPTS=/LTCG /libpath:C:\P\lib /nologo
+RC_OPTS=/n /nologo
+
+all: ansiorb64.exe 
+
+
+ansiorb64.exe: ansi64.obj dlt64.obj matrix64.obj orbansi64.obj
+	link $(LINK_OPTS) /OUT:ansiorb64.exe ansi64.obj dlt64.obj matrix64.obj orbansi64.obj 
+
+
+ansi64.obj: ansi.c common.c ansi.h orb.h
+	cl /c /Za $(CL_OPTS) /Foansi64.obj ansi.c
+dlt64.obj: dlt.c dlt.h matrix.h
+	cl /c /Za $(CL_OPTS) /Fodlt64.obj dlt.c
+matrix64.obj: matrix.c matrix.h
+	cl /c /Za $(CL_OPTS) /Fomatrix64.obj matrix.c
+orbansi64.obj: orb.c orb.h
+	cl /c /Za /DANSIC=true $(CL_OPTS) /Foorbansi64.obj orb.c
+
+
+clean:
+	del *.obj
+	del *.res
+
