@@ -137,10 +137,10 @@ typedef struct STEREO {
   double lrcamera[20], lrcammat[18]; } STEREO;         /* Used with render */
 
 /* STEREO flags:
-/*  Bit 0: 0-top scan line is left, 1-top scan line is right (INTERLACED)
-/*      1: 0-red is left, 1-red is right (REDBLUE)
-/*      2: auto-separation flag, used by calling routines
-/*      3: 0-random dot, 1-seed image (STEREOGRAM)                         */
+ *  Bit 0: 0-top scan line is left, 1-top scan line is right (INTERLACED)
+ *      1: 0-red is left, 1-red is right (REDBLUE)
+ *      2: auto-separation flag, used by calling routines
+ *      3: 0-random dot, 1-seed image (STEREOGRAM)                         */
 
 real  calc_grad            (real *r, OATOM *p, long mag);
 real  calc_grad_mag        (MOLECULE *mol);

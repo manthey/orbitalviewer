@@ -1961,7 +1961,8 @@ void stereogram(long w, long h, long scan, uchar *scrbuf, ushort *zbuf,
   if (!(buf=malloc2(w*sizeof(float))))  return;
   for (j=0; j<h; j++) {
     zd = j*w;  d = j*scan;
-    memset(buf, -1, w*sizeof(float));
+    for (i=0; i<w; i++)
+      buf[i] = -1;
     for (i=0; i<w; i++) {
       z = 1-(float)zbuf[zd+i]/65535;
       s = inter/2-(inter/6)*z;
