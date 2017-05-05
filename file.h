@@ -61,7 +61,7 @@ void   render_dlt     (long numnode, float *node, long w, long h,
                        float perspec, double *renderval, double *initdlt,
                        double *findlt);
 void   render_dlt_new (long numnode, float *node, long w, long h,
-                       float perspec, double *renderval, double *findlt);
+                       double perspec, double *renderval, double *findlt);
 void   render_move    (float *dx, float *dang, float *dx0, long w, long h,
                        double *renderval, double *initdlt, double *findlt);
 void   render_physical(double *val, double *dlt, double *phys, lmatrix *ang);

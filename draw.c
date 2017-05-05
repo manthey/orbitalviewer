@@ -1659,7 +1659,8 @@ void reset_geo(void)
   DefSize = data->mol.maxcheck;
   render_dlt_new(0, 0, 100, 100, Pref.perspec, data->renderval,
                  data->renderdlt);
-  update_process(data);
+  data->changed = 1;
+  orb_render(&data->render, 0, 0, &data->mol, 0, 4);
   unlock_window(data);
   InvalidateRect(hwnd, 0, 0);
 }

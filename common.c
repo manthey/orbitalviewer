@@ -919,7 +919,7 @@ void render_dlt(long numnode, float *node, long w, long h, float perspec,
   renderval[4] = renderval[5] = renderval[6] = 0;
 }
 
-void render_dlt_new(long numnode, float *node, long w, long h, float perspec,
+void render_dlt_new(long numnode, float *node, long w, long h, double perspec,
                     double *renderval, double *findlt)
 /* Compute a set of dlt parameters based on a geometry and the screen size.
  *  The default orientation is viewing the geometry 'straight on'.
@@ -927,8 +927,8 @@ void render_dlt_new(long numnode, float *node, long w, long h, float perspec,
  *                      best possible.  Zero for use default size (DefSize).
  *        float *node: pointer to xyzxyzxyz array of coordinates.
  *        long w, h: size of destination screen.
- *        float perspec: perspective distance.  A value of 25 works well.
- *                       Smaller values produce more "bulge".
+ *        double perspec: perspective distance.  A value of 25 works well.
+ *                        Smaller values produce more "bulge".
  *        double *renderval: location to store 10 double values containing
  *                           the values needed for render_move.
  *        double *findlt: location to store result.  May be the same as
