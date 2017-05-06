@@ -10,6 +10,7 @@ init:
   - curl -L -O "https://github.com/manthey/gv/releases/download/gv-latest/mem.h"
   - cd %PROJDIR%
   - SET PATH=%PATH%;%PROJDIR%\utils
+  - pip install sphinx sphinx_rtd_theme
 
 build_script:
   - nmake

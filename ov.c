@@ -559,7 +559,11 @@ BOOL CALLBACK cutaway_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
     case WM_LBUTTONDOWN: case WM_LBUTTONUP: case WM_MBUTTONDOWN:
     case WM_MBUTTONUP: case WM_MOUSEMOVE: case WM_RBUTTONDOWN:
     case WM_RBUTTONUP:
-      preview_mouse(hdlg, msg, wp, lp, data, 1, (long)pos);  return(0);
+      if (preview_mouse(hdlg, msg, wp, lp, data, 1, (long)pos)) {
+        cutaway_rect(0, hdlg);  update = 1;
+        SetTimer(hdlg, 3, 0, 0);
+      }
+      return(0);
     case WM_PAINT: KillTimer(hdlg, 3);
       SetTimer(hdlg, 3, 0, 0);  update = 1;  lasttype = -1;  return(0);
     case WM_TIMER: KillTimer(hdlg, 3);

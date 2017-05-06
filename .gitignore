@@ -6,3 +6,4 @@
 *.swp
 *.pyc
 data.h
+docs/_build

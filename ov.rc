@@ -217,7 +217,7 @@ END
 
 CamDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE   10, 10, 186, 194
 STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP | 0x0004
-CAPTION "Camera Options..."
+CAPTION "Camera Options"
 FONT 8, "MS Sans Serif"
 BEGIN
     CONTROL         "&Fixed Image Size", CamFixed, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,  8,4,68,12
@@ -283,7 +283,7 @@ END
 
 CutDLG DIALOG MOVEABLE IMPURE LOADONCALL DISCARDABLE   10, 10, 186, 194
 STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP | 0x0004
-CAPTION "Cutaway Options..."
+CAPTION "Cutaway Options"
 FONT 8, "MS Sans Serif"
 BEGIN
     LTEXT           "Cutaway Type:", IDC_STATIC,    8,4,52,8, SS_LEFT
@@ -448,18 +448,18 @@ BEGIN
     CONTROL         "Show Tool T&ips", PrefTips, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,    16,48,84,8
     CONTROL         "Show &Status Line", PrefStatus, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,  8,60,92,8
     CONTROL         "Show Start S&creen", PrefSplash, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,     8,76,92,8
-    LTEXT           "VRML files:", IDC_STATIC,  8,92,40,8, SS_LEFT
+    LTEXT           "VRML File Options:", IDC_STATIC,  8,92,40,8, SS_LEFT
     CONTROL         "Use &Diffuse Color", PrefDiffuse, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,     16,104,80,8
     CONTROL         "Use &Ambient Color", PrefAmbient, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,     16,116,80,8
     CONTROL         "Use E&missive Color", PrefEmissive, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,    16,128,80,8
-    LTEXT           "&Point size:", IDC_STATIC,     112,10,36,8, SS_LEFT
+    LTEXT           "&Point Size:", IDC_STATIC,     112,10,36,8, SS_LEFT
     COMBOBOX        PrefPoint,   152,8,32,40, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "pixels", IDC_STATIC,   188,10,24,8, SS_LEFT
-    LTEXT           "Menu/Toolbar Step Sizes:", IDC_STATIC,     112,32,100,8, SS_LEFT
+    LTEXT           "Menu / Toolbar Step Sizes:", IDC_STATIC,     112,32,100,8, SS_LEFT
     LTEXT           "R&otation:", IDC_STATIC,   120,46,36,8, SS_LEFT
     EDITTEXT        PrefRad,  160,44,52,12, ES_AUTOHSCROLL | ES_LEFT
     COMBOBOX        PrefRadUnit,   160,60,52,32, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "S&hift/Pan:", IDC_STATIC,  120,82,36,8, SS_LEFT
+    LTEXT           "S&hift / Pan:", IDC_STATIC,  120,82,36,8, SS_LEFT
     EDITTEXT        PrefPan,  160,80,28,12, ES_AUTOHSCROLL | ES_LEFT
     LTEXT           "% screen", IDC_STATIC,     192,82,32,8, SS_LEFT
     LTEXT           "&Zoom:", IDC_STATIC,   120,98,36,8, SS_LEFT
@@ -547,7 +547,7 @@ BEGIN
     RTEXT    "&Number of steps:", IDC_STATIC,    34,192,60,8, SS_LEFT
     EDITTEXT RendStep,  102,190,32,12, ES_AUTOHSCROLL | ES_LEFT
     CONTROL  "Scroll bar", RendScrStep, "ScrollBar", SBS_HORZ,    96,206,44,6
-    CONTROL  "Auto &Brightness", RendAutoB,   "Button", BS_AUTOCHECKBOX | WS_TABSTOP,   200,176,60,12
+    CONTROL  "Auto &Brightness", RendAutoB,   "Button", BS_AUTOCHECKBOX | WS_TABSTOP,   200,176,65,12
     CONTROL  "&Antialias",       RendAnti,   "Button", BS_AUTOCHECKBOX | WS_TABSTOP,   200,188,60,12
     CONTROL  "&Coarse Render",   RendCoarse, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,   200,200,60,12
     PUSHBUTTON      "Help", HelpHelp,    10,224,40,14, 0
@@ -607,7 +607,7 @@ BEGIN
     CONTROL         "&Monoscopic", SterMode1, "Button", BS_AUTORADIOBUTTON,   8, 8,60,12
     CONTROL         "&Stereoscope",SterMode2, "Button", BS_AUTORADIOBUTTON,   8,20,60,12
     CONTROL         "&Interlaced", SterMode3, "Button", BS_AUTORADIOBUTTON,   8,32,44,12
-    CONTROL         "&Red-blue ",  SterMode4, "Button", BS_AUTORADIOBUTTON,   8,44,40,12
+    CONTROL         "&Red-blue ",  SterMode4, "Button", BS_AUTORADIOBUTTON,   8,44,44,12
     CONTROL         "S&tereogram", SterMode5, "Button", BS_AUTORADIOBUTTON,   8,56,48,12
     CONTROL         "&Overlay",    SterMode6, "Button", BS_AUTORADIOBUTTON,   8,68,36,12
     CONTROL         "&Chromadepth",SterMode7, "Button", BS_AUTORADIOBUTTON,   8,80,76,12

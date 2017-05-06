@@ -2,7 +2,7 @@ CL_OPTS=/O2 /GL /W2 /w24101 /w34244 /w34305 /nologo /I C:\P\lib
 LINK_OPTS=/LTCG /libpath:C:\P\lib /nologo
 RC_OPTS=/n /nologo
 
-all: ansiorb.exe ov.exe
+all: ansiorb.exe ov.exe docs\_build\html\index.html
 
 
 ansiorb.exe: ansi.obj dlt.obj matrix.obj orbansi.obj
@@ -35,8 +35,14 @@ ov.res: ov.rc ovrc.h u\tools.bmp
 	rc $(RC_OPTS) ov.rc
 
 
+docs\_build\html\index.html: docs\index.rst docs\dialogs.rst docs\general.rst docs\menu.rst
+	cd docs
+	make html
+	cd ..
+
+
 clean:
 	del *.obj
 	del *.res
 	del data.h
-
+	del /q /s docs\_build\*.*
