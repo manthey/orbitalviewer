@@ -138,6 +138,7 @@ void   quit           (void);
 real   rnd            (real low, real high, long inc);
 void   sequence_stop  (void);
 void   set_window_name(HWND hwnd, DATA *data);
+void   show_help      (char *anchor);
 void   start_avi      (void);
 long   start_common   (void);
 void   start_ctl3d    (void);
@@ -146,8 +147,8 @@ HANDLE unlock_window  (DATA *data);
 long   warning        (HWND hwnd2, char *text);
 HWND   window_handle  (DATA *data);
 
-extern char *DistText[], HelpFile[], lastview[], *MassText[], OrbLet[],
-       Program[], *RadText[], Untitled[], WinName2[];
+extern char *DistText[], lastview[], *MassText[], OrbLet[], Program[],
+       *RadText[], Untitled[], WinName2[];
 extern DATA *DispData;
 extern float DefSize;
 extern HPALETTE Hpal, HpalSplash;

@@ -44,7 +44,6 @@
 #define  MenuTile       401
 #define  MenuArrange    402
 #define MenuHelp        5
-#define  MenuHelpS      501
 #define  MenuAbout      502
 #define MenuSwitch      6
 #define  MenuSwitchBack 601

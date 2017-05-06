@@ -63,7 +63,6 @@ MainMenu MENU {
     MENUITEM "&Arrange Icons", MenuArrange }
   POPUP "&Help" {
     MENUITEM "&Help...\tF1", MenuHelp
-    MENUITEM "&Search Help...", MenuHelpS
     MENUITEM SEPARATOR
     MENUITEM "&About...", MenuAbout } }
 
@@ -124,7 +123,6 @@ BEGIN
   MenuFocalIn,  "Change to a flatter view (less perspective)."
   MenuFocalOut, "Change to a more curved view (more perspective)."
   MenuHelp,     "Show the help table of contents."
-  MenuHelpS,    "Search the help database."
   MenuLeft,     "Move the orbital left."
   MenuLight,    "Adjust the light source and shadowing."
   MenuNew,      "Open a new window with the default orbital."

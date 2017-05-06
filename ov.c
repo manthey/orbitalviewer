@@ -22,8 +22,8 @@ typedef struct LOCKTBL {
   DATA *data;
   long count; } LOCKTBL;
 
-char HelpFile[]="OV.HLP", lastview[1024], Program[]="Orbital Viewer",
-     Untitled[]="Untitled", WinName[]="ORBwin", WinName2[]="ORBw2";
+char lastview[1024], Program[]="Orbital Viewer", Untitled[]="Untitled",
+     WinName[]="ORBwin", WinName2[]="ORBw2";
 DATA *DispData;
 HINSTANCE havi=0, hctl3d=0, hinst, hcom=0;
 HMENU Hmenu;
@@ -90,9 +90,8 @@ TBBUTTON ToolList[]={
     { 7,MenuTile,     TBSTATE_ENABLED,TBSTYLE_BUTTON},
     {31,MenuArrange,  TBSTATE_ENABLED,TBSTYLE_BUTTON},
     {25,MenuHelp,     TBSTATE_ENABLED,TBSTYLE_BUTTON},
-    {32,MenuHelpS,    TBSTATE_ENABLED,TBSTYLE_BUTTON},
     {28,MenuAbout,    TBSTATE_ENABLED,TBSTYLE_BUTTON},
-    { 0,0}}; /* Next is 47 */
+    { 0,0}}; /* Next is 47.  32 is no longer used */
 TBBUTTON ToolSep={0,0,TBSTATE_ENABLED,TBSTYLE_SEP,0,0,0};
 long ToolInit[]={-1,MenuNew,MenuOpen,MenuSave,MenuSaveAs,MenuClose,-1,
      MenuCopy,-1,MenuRenderOpt,MenuPointOpt,MenuPolyOpt,MenuRayOpt,
@@ -191,8 +190,7 @@ BOOL CALLBACK asymptote_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
           SendDlgItemMessage(hdlg,AsymWire2,BM_SETCHECK,0,0); break;
       case AsymWire2: if (SendDlgItemMessage(hdlg,AsymWire2,BM_GETCHECK,0,0))
           SendDlgItemMessage(hdlg,AsymWire,BM_SETCHECK,0,0); break;
-      case HelpHelp: WinHelp(Hwnd, HelpFile, HELP_CONTEXT, HelpAsymptote);
-        break;
+      case HelpHelp: show_help("#asymptote_dialog"); break;
       case IDOK: if (data=lock_window(hwnd)) {
         GetDlgItemText(hdlg, AsymEdit, text, 79);
         val = GetScrollPos(GetDlgItem(hdlg, AsymScr), SB_CTL);
@@ -307,7 +305,7 @@ BOOL CALLBACK camera_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
           sprintf(text2, "%g", x2+1e-6-2e-6*(x2<0));
           if (strlen(text2)<strlen(text)) strcpy(text, text2);
           SetDlgItemText(hdlg, CamAng0+i, text); }  init = 0;  break;
-      case HelpHelp: WinHelp(Hwnd,HelpFile,HELP_CONTEXT,HelpCamera); break;
+      case HelpHelp: show_help("#camera_dialog"); break;
       case IDOK: for (i=0; i<3; i++) {
           GetDlgItemText(hdlg, CamAng0+i, text, 79);
           x2 = 1e30;  sscanf(text, "%lf", &x2);  x2 *= RadVal[ru];
@@ -500,7 +498,7 @@ BOOL CALLBACK cutaway_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
           sprintf(text2, "%g", x2+1e-6-2e-6*(x2<0));
           if (strlen(text2)<strlen(text)) strcpy(text, text2);
           SetDlgItemText(hdlg, CutAng0+i, text); } break;
-      case HelpHelp: WinHelp(Hwnd,HelpFile,HELP_CONTEXT,HelpCutaway); break;
+      case HelpHelp: show_help("#cutaway_dialog"); break;
       case IDOK: for (i=0; i<3; i++) {
           GetDlgItemText(hdlg, CutAng0+i, text, 79);
           x2 = 1e30;  sscanf(text, "%lf", &x2);  x2 *= RadVal[ru];
@@ -686,7 +684,7 @@ BOOL CALLBACK light_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   mol = &data->mol;
   switch (msg) {
     case WM_COMMAND: switch (wp&0xFFFF) {
-      case HelpHelp: WinHelp(Hwnd,HelpFile,HELP_CONTEXT,HelpLight); break;
+      case HelpHelp: show_help("#lighting_dialog"); break;
       case IDOK: KillTimer(hdlg, 4);
         if (listed>=0) { light_read(hdlg, ls+listed);  last = listed; }
         if (numl!=mol->numl || memcmp(mol->ls, ls, sizeof(LIGHT)*min(numl,
@@ -992,8 +990,7 @@ LRESULT CALLBACK main_loop(HWND hwnd, ulong msg, WPARAM wp, LPARAM lp)
         case MenuExt: add_extensions(hwnd); return(0);
         case MenuFocalIn: focal_geo(2, 0.5); return(0);
         case MenuFocalOut: focal_geo(2, -0.5); return(0);
-        case MenuHelp: WinHelp(hwnd, HelpFile, HELP_CONTENTS, 0); return(0);
-        case MenuHelpS: WinHelp(hwnd, HelpFile, HELP_FINDER, 0); return(0);
+        case MenuHelp: show_help(0); return(0);
         case MenuLastView: case MenuLastView+1: case MenuLastView+2:
         case MenuLastView+3:
           sprintf(OpenName,"\"%s\"",lastview+256*((wp&0xFFFF)-MenuLastView));
@@ -1102,7 +1099,7 @@ LRESULT CALLBACK main_loop(HWND hwnd, ulong msg, WPARAM wp, LPARAM lp)
       status(text); break;
     case WM_NOTIFY: if (((LPNMHDR)lp)->idFrom==ToolWindow)
       switch (((LPTBNOTIFY)lp)->hdr.code) {
-        case TBN_CUSTHELP: WinHelp(hwnd, HelpFile, HELP_CONTENTS, 0); break;
+        case TBN_CUSTHELP: show_help(0); break;
         case TBN_ENDADJUST: compute_client(Hwnd, 0, 0);  break;
         case TBN_GETBUTTONINFO: for (i=0; ToolList[i].idCommand; i++);
           if (((LPTBNOTIFY)lp)->iItem>=i)  return(0);
@@ -1223,7 +1220,7 @@ BOOL CALLBACK orbital_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   mol = &data->mol;
   switch (msg) {
     case WM_COMMAND: switch (wp&0xFFFF) {
-      case HelpHelp: WinHelp(Hwnd,HelpFile,HELP_CONTEXT,HelpOrb); break;
+      case HelpHelp: show_help("#orbital_dialog"); break;
       case IDOK:
         if (listed>=0) { orbital_read(hdlg, orb+listed);  last = listed; }
         if (nump!=mol->nump || memcmp(mol->orb, orb, sizeof(OATOM)*min(nump,
@@ -1471,7 +1468,7 @@ BOOL CALLBACK point_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   hwnd = (HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
   switch (msg) {
     case WM_COMMAND: switch (wp&0xFFFF) {
-      case HelpHelp: WinHelp(Hwnd,HelpFile,HELP_CONTEXT,HelpPointOpt); break;
+      case HelpHelp: show_help("#point_dialog"); break;
       case IDOK: if (data=lock_window(hwnd)) {
         GetDlgItemText(hdlg, PointPoint, text, 79);
         temp2 = GetScrollPos(GetDlgItem(hdlg, PointScr), SB_CTL)*1000;
@@ -1533,8 +1530,7 @@ BOOL CALLBACK polygon_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   hwnd = (HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
   switch (msg) {
     case WM_COMMAND: switch (wp&0xFFFF) {
-      case HelpHelp: WinHelp(Hwnd, HelpFile, HELP_CONTEXT, HelpPolygon);
-        break;
+      case HelpHelp: show_help("#polygon_dialog"); break;
       case IDOK: if (data=lock_window(hwnd)) {
         GetDlgItemText(hdlg, PolyPsi, text, 79);
         psi = GetScrollPos(GetDlgItem(hdlg, PolyScrPsi), SB_CTL)*-0.1;
@@ -1889,7 +1885,7 @@ BOOL CALLBACK render_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   hwnd = (HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
   switch (msg) {
     case WM_COMMAND: switch (wp&0xFFFF) {
-      case HelpHelp: WinHelp(Hwnd,HelpFile,HELP_CONTEXT,HelpRender); break;
+      case HelpHelp: show_help("#render_dialog"); break;
       case IDOK: if (data=lock_window(hwnd)) {
         old = data->dflag;
         data->dflag &= (~0x1F);
@@ -1937,8 +1933,7 @@ BOOL CALLBACK render_opt_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
   hwnd = (HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0);
   switch (msg) {
     case WM_COMMAND: switch (wp&0xFFFF) {
-      case HelpHelp: WinHelp(Hwnd, HelpFile, HELP_CONTEXT, HelpRenderOpt);
-        break;
+      case HelpHelp: show_help("#raytrace_dialog"); break;
       case IDOK: if (data=lock_window(hwnd)) {
         GetDlgItemText(hdlg, RendPsi, text, 79);
         psi = GetScrollPos(GetDlgItem(hdlg, RendScrPsi), SB_CTL)*-0.1;
@@ -2160,7 +2155,7 @@ BOOL CALLBACK sequence_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
 
   switch (msg) {
     case WM_COMMAND: switch (wp&0xFFFF) {
-      case HelpHelp: WinHelp(Hwnd,HelpFile,HELP_CONTEXT,HelpSequence); break;
+      case HelpHelp: show_help("#sequence_dialog"); break;
       case IDCANCEL: for (i=0; i<4; i++) if (seq[i]) {
           free2(seq[i]->mol.orb);  free2(seq[i]->mol.ls);
           free2(seq[i]); }
@@ -2275,6 +2270,19 @@ void set_window_name(HWND hwnd, DATA *data)
   SetWindowText(hwnd, text);
 }
 
+void show_help(char *anchor)
+/* Open a web browser to the help URL.
+ * Enter: char *anchor: text to optionally add to the help url.  May be null.
+ *                                                                5/5/17-DWM */
+{
+  char url[800] = "https://github.com/manthey/orbitalviewer";
+
+  if (anchor) {
+    strcat(url, anchor);
+  }
+  ShellExecuteA(NULL, "open", url, NULL, NULL, SW_SHOWNORMAL);
+}
+
 void start_avi(void)
 /* Start up the AVI control functions, if available.           1/22/98-DWM */
 {
@@ -2359,8 +2367,7 @@ BOOL CALLBACK stereo_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
         if (val<1e10) {
           sprintf(text, "%g", val/DistVal[du]);
           SetDlgItemText(hdlg, SterSep, text); } break;
-      case HelpHelp: WinHelp(Hwnd, HelpFile, HELP_CONTEXT, HelpStereo);
-        break;
+      case HelpHelp: show_help("#stereo_dialog"); break;
       case IDOK: KillTimer(hdlg, 6);
         for (i=0; i<StereoMODES; i++)
           if (SendDlgItemMessage(hdlg,SterMode1+i,BM_GETCHECK,0,0))
@@ -2778,7 +2785,6 @@ int APIENTRY WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR argv, int winmode)
         !TranslateAccelerator(Hwnd, acc, &msg)) {
       TranslateMessage(&msg);
       DispatchMessage(&msg); } }
-  WinHelp(Hwnd, HelpFile, HELP_QUIT, 0);
   if (Hpal)  DeleteObject(Hpal);
   if (HpalSplash)  DeleteObject(HpalSplash);
   DragAcceptFiles(Hwnd, 0);

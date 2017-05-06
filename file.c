@@ -194,7 +194,7 @@ BOOL CALLBACK color_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
         rect.left = out[0]-2;   rect.top = out[1]-2;
         rect.right = out[2]+2;  rect.bottom = out[3]+2;
         InvalidateRect(hdlg, &rect, 1); break;
-      case HelpHelp: WinHelp(Hwnd,HelpFile,HELP_CONTEXT,HelpColor); break;
+      case HelpHelp: show_help("#color_dialog"); break;
       case IDOK: clr = Pref.colors;
         if (hwnd=(HWND)SendMessage(HwndC, WM_MDIGETACTIVE, 0, 0))
           if (data=lock_window(hwnd))
@@ -840,8 +840,7 @@ BOOL CALLBACK preferences_dialog(HWND hdlg, ulong msg, WPARAM wp, LPARAM lp)
 
   switch (msg) {
     case WM_COMMAND: switch (wp&0xFFFF) {
-      case HelpHelp: WinHelp(Hwnd,HelpFile,HELP_CONTEXT,HelpPreferences);
-        break;
+      case HelpHelp: show_help("#preferences_dialog"); break;
       case IDOK: i = Pref.toolbar*2+Pref.status;
         Pref.error = SendDlgItemMessage(hdlg, PrefError, BM_GETCHECK, 0, 0);
         Pref.warn  = SendDlgItemMessage(hdlg, PrefWarn,  BM_GETCHECK, 0, 0);
