@@ -65,18 +65,22 @@ def generate_orbital(opts, n, l, m):
     open(temp2, 'wb').write(orb)
     proc2 = subprocess.Popen([opts['exe'], temp2], stdout=subprocess.PIPE)
     # We have to parse P3 images, as PIL doesn't support them.
-    white = [float(val) for val in proc1.stdout.read().split()[4:]]
-    black = [float(val) for val in proc2.stdout.read().split()[4:]]
-    os.unlink(temp1)
-    os.unlink(temp2)
+    data1 = {}
+    data2 = {}
+    white = [read_to_whitespace(proc1.stdout, data1) for x in xrange(4)]
+    black = [read_to_whitespace(proc2.stdout, data2) for x in xrange(4)]
     png = []
     ranti2 = 1.0 / (anti * anti)
     for h in xrange(size):
+        white = [float(read_to_whitespace(proc1.stdout, data1))
+                 for w in xrange(size * anti * anti * 3)]
+        black = [float(read_to_whitespace(proc2.stdout, data2))
+                 for w in xrange(size * anti * anti * 3)]
         for w in xrange(size):
             r = g = b = a = 0
             for y in xrange(anti):
                 for x in xrange(anti):
-                    i = ((h * anti + y) * size * anti + w * anti + x) * 3
+                    i = ((y) * size * anti + w * anti + x) * 3
                     al = 255 - (
                         white[i] - black[i] +
                         white[i + 1] - black[i + 1] +
@@ -97,6 +101,9 @@ def generate_orbital(opts, n, l, m):
                 max(0, min(255, int(g * ranti2))),
                 max(0, min(255, int(b * ranti2))),
                 max(0, min(255, int(a * ranti2)))))
+    os.unlink(temp1)
+    os.unlink(temp2)
+    proc1 = proc2 = None
     img = PIL.Image.new('RGBA', (size, size))
     img.putdata(png)
     if os.path.exists(dest):
@@ -163,6 +170,30 @@ def prep_table(opts):
     Enter: opts: a dictionary of options.  Modified.
     """
     opts['base'] = open(opts['orbfile']).read()
+
+
+def read_to_whitespace(fptr, track):
+    """
+    Read, skipping over white space.  Then read all non-whitespace until one
+    character of white space is consumed.  Return the non-whitespace that was
+    read.  If the end of the file is encountered, return any non-whitespace if
+    available, or an empty bytes string.
+    Enter: fptr: file-like object to read from.
+           track: a dictionary used to hold temporary values
+    Exit:  val: non-whitespace string
+    """
+    if 'data' in track:
+        if track['next'] < len(track['data']) - 1:
+            out = track['data'][track['next']]
+            track['next'] += 1
+            return out
+        data = track['data'][-1][:-1]
+    else:
+        data = b''
+    track['data'] = (data + fptr.read(1024 * 1024) + b'X').split()
+    out = track['data'][0]
+    track['next'] = 1
+    return out
 
 
 def update_orb_spec(spec, param):
