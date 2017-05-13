@@ -1,6 +1,7 @@
 import os
 import PIL.Image
 import multiprocessing
+import psutil
 import signal
 import subprocess
 import sys
@@ -45,7 +46,7 @@ def generate_orbital(opts, n, l, m):
     }
     if n > 1 and not l and not m:
         param.update(s0Settings)
-    name = '%d%c%d' % (n, OrbLet[l], m)
+    name = '%d%s%d' % (n, OrbLet[l] if l < len(OrbLet) else '_%d_' % l, m)
     dest = os.path.join(opts['dest'], name + '.png')
     description = '%10s %4.2f %g' % (name, psi2, cz * 1e10)
     if not opts['multi']:
@@ -90,7 +91,7 @@ def generate_orbital(opts, n, l, m):
                         r += black[i]
                         g += black[i + 1]
                         b += black[i + 2]
-                        a += 1
+                        a += 255 if al else 0
             png.append((
                 max(0, min(255, int(r * ranti2))),
                 max(0, min(255, int(g * ranti2))),
@@ -98,10 +99,21 @@ def generate_orbital(opts, n, l, m):
                 max(0, min(255, int(a * ranti2)))))
     img = PIL.Image.new('RGBA', (size, size))
     img.putdata(png)
+    if os.path.exists(dest):
+        try:
+            os.unlink(dest)
+        except Exception:
+            pass
     img.save(dest, 'PNG', optimize=True)
+    # Further optimize the png if optipng is available
+    try:
+        subprocess.call(['optipng', '-clobber', '-quiet', dest])
+    except Exception:
+        pass
     if opts['multi']:
         sys.stdout.write(description)
-    sys.stdout.write(' %3.1fs\n' % (time.time() - starttime))
+    filesize = os.path.getsize(dest)
+    sys.stdout.write(' %d %3.1fs\n' % (filesize, time.time() - starttime))
     sys.stdout.flush()
 
 
@@ -117,6 +129,12 @@ def generate_table(opts):
                 initializer=worker_init,
                 processes=multiprocessing.cpu_count() / 2
                 if opts['multi'] is True else opts['multi'])
+            priorityLevel = (psutil.BELOW_NORMAL_PRIORITY_CLASS
+                             if sys.platform == 'win32' else 10)
+            parent = psutil.Process()
+            parent.nice(priorityLevel)
+            for child in parent.children():
+                child.nice(priorityLevel)
             tasks = []
         for n in xrange(opts['minn'], opts['maxn'] + 1):
             for l in xrange(0, n):
